@@ -1,0 +1,9 @@
+#include <turnkey/base>
+#include <turnkey/lamp>
+
+php5-gd
+php5-cli
+php5-curl
+
+curl
+
