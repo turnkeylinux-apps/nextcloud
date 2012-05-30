@@ -10,3 +10,12 @@ ADMIN_PASS=turnkey
 SRC=/usr/local/src
 WEBROOT=/var/www/owncloud
 
+# unpack and tweak permissions
+tar -xjf $SRC/owncloud-*.tar.bz2 -C $(dirname $WEBROOT)
+rm $SRC/owncloud-*.tar.bz2
+chown -R root:root $WEBROOT
+chown -R www-data:www-data $WEBROOT/config
+chmod 775 $WEBROOT/config
+mkdir -p $WEBROOT/data
+chown -R www-data:www-data $WEBROOT/data
+
