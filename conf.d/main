@@ -19,3 +19,8 @@ chmod 775 $WEBROOT/config
 mkdir -p $WEBROOT/data
 chown -R www-data:www-data $WEBROOT/data
 
+# configure apache
+a2dissite default
+a2ensite owncloud
+a2enmod rewrite
+
