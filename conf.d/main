@@ -1,0 +1,12 @@
+#!/bin/sh -ex
+
+DB_NAME=owncloud
+DB_USER=owncloud
+DB_PASS=$(mcookie)
+
+ADMIN_NAME=admin
+ADMIN_PASS=turnkey
+
+SRC=/usr/local/src
+WEBROOT=/var/www/owncloud
+
