@@ -60,6 +60,10 @@ rm -f /tmp/cookie
 # bugfix: image thumbnails aren't displayed
 sed -i '/^$/d' $WEBROOT/apps/files_odfviewer/appinfo/app.php
 
+# tweak footer
+TEMPLATE=$WEBROOT/core/templates/layout.guest.php
+sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
+
 # stop services
 /etc/init.d/mysql stop
 /etc/init.d/apache2 stop
