@@ -1,0 +1,23 @@
+NameVirtualHost *:80
+NameVirtualHost *:443
+
+<VirtualHost *:80>
+    UseCanonicalName Off
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/owncloud/
+</VirtualHost>
+
+<VirtualHost *:443>
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/cert.pem
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/owncloud/
+</VirtualHost>
+
+<Directory /var/www/owncloud/>
+    Options +FollowSymLinks
+    AllowOverride All
+    order allow,deny
+    allow from all
+</Directory>
+
