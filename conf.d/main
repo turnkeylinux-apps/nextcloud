@@ -57,6 +57,9 @@ curl -c /tmp/cookie -b /tmp/cookie http://127.0.0.1/index.php
 rm -f $WEBROOT/config/autoconfig.php
 rm -f /tmp/cookie
 
+# bugfix: image thumbnails aren't displayed
+sed -i '/^$/d' $WEBROOT/apps/files_odfviewer/appinfo/app.php
+
 # stop services
 /etc/init.d/mysql stop
 /etc/init.d/apache2 stop
