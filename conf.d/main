@@ -24,3 +24,16 @@ a2dissite default
 a2ensite owncloud
 a2enmod rewrite
 
+# start services
+/etc/init.d/mysql start
+
+# setup the database
+MYSQL_BATCH="mysql --user=root --password=$MYSQL_PASS --batch"
+MYSQL_ADMIN="mysqladmin --user=root --password=$MYSQL_PASS"
+
+$MYSQL_ADMIN create $DB_NAME
+$MYSQL_BATCH --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
+
+# stop services
+/etc/init.d/mysql stop
+
