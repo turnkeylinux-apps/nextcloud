@@ -64,6 +64,9 @@ sed -i '/^$/d' $WEBROOT/apps/files_odfviewer/appinfo/app.php
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
 sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
 
+# tweak permissions
+chmod 640 $WEBROOT/config/config.php
+
 # stop services
 /etc/init.d/mysql stop
 /etc/init.d/apache2 stop
