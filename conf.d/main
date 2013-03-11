@@ -67,6 +67,11 @@ sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a
 # tweak permissions
 chmod 640 $WEBROOT/config/config.php
 
+# tweak xcache
+XCACHEINI=/etc/php5/conf.d/xcache.ini
+sed -i "s|xcache.admin.enable_auth.*|xcache.admin.enable_auth = Off|" $XCACHEINI
+sed -i "s|xcache.var_size.*|xcache.var_size = 32M|" $XCACHEINI
+
 # stop services
 /etc/init.d/mysql stop
 /etc/init.d/apache2 stop
