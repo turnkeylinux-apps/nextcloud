@@ -10,15 +10,6 @@ ADMIN_PASS=turnkey
 SRC=/usr/local/src
 WEBROOT=/var/www/owncloud
 
-# unpack and tweak permissions
-#tar -xjf $SRC/owncloud-*.tar.bz2 -C $(dirname $WEBROOT)
-#rm $SRC/owncloud-*.tar.bz2
-#chown -R root:root $WEBROOT
-#chown -R www-data:www-data $WEBROOT/config
-#chmod 775 $WEBROOT/config
-#mkdir -p $WEBROOT/data
-#chown -R www-data:www-data $WEBROOT/data
-
 # For ownCloud v5, use the debian repo instead of the tarball.
 # It will make upgrades much easier in the future
 echo 'deb http://download.opensuse.org/repositories/isv:ownCloud:community/Debian_7.0/ /' >> /etc/apt/sources.list.d/owncloud.list 
@@ -62,13 +53,7 @@ cat >$WEBROOT/config/config.php<<EOF
 ?>
 EOF
 
-#curl -c /tmp/cookie -b /tmp/cookie http://127.0.0.1/index.php
-# rm -f $WEBROOT/config/autoconfig.php
-#rm -f /tmp/cookie
-
 chown -R www-data:www-data $WEBROOT
-
-sleep 60
 
 # bugfix: image thumbnails aren't displayed
 sed -i '/^$/d' $WEBROOT/apps/files_odfviewer/appinfo/app.php
