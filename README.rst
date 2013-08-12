@@ -11,7 +11,7 @@ and on top of that:
 
 - ownCloud configurations:
    
-   - Installed from upstream source code to /var/www/owncloud
+   - Installed from ownCloud debian repository to /var/www/owncloud
 
 - SSL support out of the box.
 - `PHPMyAdmin`_ administration frontend for MySQL (listening on port
@@ -24,7 +24,7 @@ Credentials *(passwords set at first boot)*
 -------------------------------------------
 
 -  Webmin, SSH, MySQL, phpMyAdmin: username **root**
--  ownCloud: username **admin**
+-  ownCloud: username and password set on initial access
 
 
 .. _ownCloud: http://owncloud.org/

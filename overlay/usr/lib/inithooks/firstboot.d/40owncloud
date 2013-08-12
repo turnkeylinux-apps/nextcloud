@@ -1,6 +1,12 @@
 #!/bin/bash -e
 # set owncloud admin password
 
+# this script is no longer needed
+# the owncloud admin username and password
+# is set upon first access to owncloud via the web
+
+exit
+
 . /etc/default/inithooks
 
 [ -e $INITHOOKS_CONF ] && . $INITHOOKS_CONF
