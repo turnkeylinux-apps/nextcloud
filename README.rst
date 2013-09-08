@@ -23,8 +23,8 @@ and on top of that:
 Credentials *(passwords set at first boot)*
 -------------------------------------------
 
--  Webmin, SSH, MySQL, phpMyAdmin: username **root**
--  ownCloud: username and password set on initial access
+- Webmin, SSH, MySQL, phpMyAdmin: username **root**
+- ownCloud: username **admin**
 
 
 .. _ownCloud: http://owncloud.org/
