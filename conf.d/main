@@ -34,6 +34,14 @@ curl $REPO/Release.key | apt-key add -
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get --force-yes --assume-yes install owncloud
 
+# tweak footer
+TEMPLATE=$WEBROOT/core/templates/layout.guest.php
+sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
+
+# tweak xcache
+XCACHEINI=/etc/php5/conf.d/20-xcache.ini
+sed -i "s|xcache.admin.enable_auth.*|xcache.admin.enable_auth = Off|" $XCACHEINI
+sed -i "s|xcache.var_size.*|xcache.var_size = 32M|" $XCACHEINI
 
 # configure apache
 a2dissite default
@@ -67,22 +75,6 @@ cat >$WEBROOT/config/autoconfig.php<<EOF
 );
 EOF
 
-chown -R www-data:www-data $WEBROOT
-
-# bugfix: image thumbnails aren't displayed
-sed -i '/^$/d' $WEBROOT/apps/files_odfviewer/appinfo/app.php
-
-# tweak footer
-TEMPLATE=$WEBROOT/core/templates/layout.guest.php
-sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
-
-# tweak permissions
-chmod 640 $WEBROOT/config/config.php
-
-# tweak xcache
-XCACHEINI=/etc/php5/conf.d/20-xcache.ini
-sed -i "s|xcache.admin.enable_auth.*|xcache.admin.enable_auth = Off|" $XCACHEINI
-sed -i "s|xcache.var_size.*|xcache.var_size = 32M|" $XCACHEINI
 chown www-data:www-data $WEBROOT/config/autoconfig.php
 curl -c /tmp/cookie -b /tmp/cookie http://127.0.0.1/index.php
 $MYSQL_BATCH --execute "USE $DB_NAME; show tables;"
