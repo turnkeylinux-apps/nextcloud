@@ -1,4 +1,4 @@
-#!/bin/sh -ex
+#!/bin/bash -ex
 
 DB_NAME=owncloud
 DB_USER=owncloud
@@ -7,18 +7,33 @@ DB_PASS=$(mcookie)
 ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
-SRC=/usr/local/src
 WEBROOT=/var/www/owncloud
 
-# For ownCloud v5, use the debian repo instead of the tarball.
-# It will make upgrades much easier in the future
-echo 'deb http://download.opensuse.org/repositories/isv:ownCloud:community/Debian_7.0/ /' >> /etc/apt/sources.list.d/owncloud.list 
+# setup repo and pinning
+_CODENAME="Debian_$(lsb_release -rs | cut -d "." -f 1).0"
+REPO="http://download.opensuse.org/repositories/isv:/ownCloud:/community/$_CODENAME"
+REPO_LABEL="Latest stable community release of ownCloud ($_CODENAME)"
+
+cat >/etc/apt/sources.list.d/owncloud.list<<EOF
+deb $REPO/ /
+EOF
+
+cat >/etc/apt/preferences.d/owncloud<<EOF
+Package: *
+Pin: release l=$REPO_LABEL
+Pin-Priority: 100
+
+Package: owncloud
+Pin: release l=$REPO_LABEL
+Pin-Priority: 500
+EOF
+
+curl $REPO/Release.key | apt-key add -
+
+# install owncloud
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes \
-    -o DPkg::Options::=--force-confdef \
-    -o DPkg::Options::=--force-confold \
-    install owncloud 
-    
+DEBIAN_FRONTEND=noninteractive apt-get --force-yes --assume-yes install owncloud
+
 
 # configure apache
 a2dissite default
