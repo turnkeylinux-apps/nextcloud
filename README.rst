@@ -9,7 +9,7 @@ wherever you are, when you need it.
 This appliance includes all the standard features in `TurnKey Core`_,
 and on top of that:
 
-- ownCloud configurations:
+- ownCloud Community Edition:
    
    - Installed from ownCloud debian repository to /var/www/owncloud
 
