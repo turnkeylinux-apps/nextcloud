@@ -10,7 +10,6 @@ NameVirtualHost *:443
 <VirtualHost *:443>
     SSLEngine on
     SSLCertificateFile /etc/ssl/certs/cert.pem
-    SSLCipherSuite "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256::ECDHE-RSA-AES256-SHA256:ECDHE-RSA-AES128:ECDHE-RSA-AES256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:RC4-SHA"
     ServerAdmin webmaster@localhost
     DocumentRoot /var/www/owncloud/
 </VirtualHost>
