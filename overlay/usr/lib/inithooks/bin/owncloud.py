@@ -43,6 +43,9 @@ def main():
             "ownCloud Password",
             "Enter new password for the ownCloud 'admin' account.")
 
+    # make sure MySQL is running when we call the OCServer hasher in owncloud_pass.php
+    m = MySQL()
+
     command = ["php", join(dirname(__file__), 'owncloud_pass.php'), password]
     p = subprocess.Popen(command, stdin=PIPE, stdout=PIPE, shell=False)
     stdout, stderr = p.communicate()
@@ -51,8 +54,9 @@ def main():
 
     cryptpass = stdout.strip()
 
-    m = MySQL()
     m.execute('UPDATE owncloud.users SET password=\"%s\" WHERE uid=\"admin\";' % cryptpass)
+    m.execute('UPDATE owncloud.preferences SET configvalue = 1 where userid = \"admin\" and appid = \"firstrunwizard\" and configkey = \"show\"')
+    m.execute('DELETE FROM owncloud.preferences where userid = \"admin\" and appid = \"login\" and configkey = \"lastLogin\"')
 
 
 if __name__ == "__main__":
