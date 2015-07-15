@@ -9,6 +9,9 @@ ADMIN_PASS=turnkey
 
 WEBROOT=/var/www/owncloud
 
+# link webdir of owncloud into /var/www
+ln -s /usr/share/owncloud /var/www/owncloud
+
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
 sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
