@@ -14,13 +14,13 @@ TEMPLATE=$WEBROOT/core/templates/layout.guest.php
 sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
 
 # tweak xcache
-XCACHEINI=/etc/php5/conf.d/20-xcache.ini
+XCACHEINI=/etc/php5/cli/conf.d/20-xcache.ini
 sed -i "s|xcache.admin.enable_auth.*|xcache.admin.enable_auth = Off|" $XCACHEINI
 sed -i "s|xcache.var_size.*|xcache.var_size = 32M|" $XCACHEINI
 
 # configure apache
-a2dissite default
-a2ensite owncloud
+a2dissite 000-default
+a2ensite owncloud.conf
 a2enmod rewrite
 
 # start services
