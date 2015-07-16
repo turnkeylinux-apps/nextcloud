@@ -7,10 +7,8 @@ DB_PASS=$(mcookie)
 ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
-WEBROOT=/var/www/owncloud
+WEBROOT=/usr/share/owncloud
 
-# link webdir of owncloud into /var/www
-ln -s /usr/share/owncloud /var/www/owncloud
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
