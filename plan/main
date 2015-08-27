@@ -10,3 +10,10 @@ php-pear
 
 bzip2
 
+owncloud
+owncloud-apps
+owncloud-client
+owncloud-client-cmd
+owncloud-client-doc
+owncloud-client-l10n
+owncloud-doc
