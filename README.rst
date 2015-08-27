@@ -14,7 +14,7 @@ and on top of that:
    - Installed from ownCloud debian repository to /var/www/owncloud
 
 - SSL support out of the box.
-- `PHPMyAdmin`_ administration frontend for MySQL (listening on port
+- `Adminer`_ administration frontend for MySQL (listening on port
   12322 - uses SSL).
 - Postfix MTA (bound to localhost) to allow sending of email (e.g.,
   password recovery).
@@ -23,10 +23,10 @@ and on top of that:
 Credentials *(passwords set at first boot)*
 -------------------------------------------
 
-- Webmin, SSH, MySQL, phpMyAdmin: username **root**
+- Webmin, SSH, MySQL, Adminer: username **root**
 - ownCloud: username **admin**
 
 
 .. _ownCloud: http://owncloud.org/
 .. _TurnKey Core: http://www.turnkeylinux.org/core
-.. _PHPMyAdmin: http://www.phpmyadmin.net
+.. _Adminer: http://www.adminer.org
