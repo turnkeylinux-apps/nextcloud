@@ -53,7 +53,7 @@ cat >$WEBROOT/config/autoconfig.php<<EOF
 EOF
 
 chown www-data:www-data $WEBROOT/config/autoconfig.php
-curl -c /tmp/cookie -b /tmp/cookie http://127.0.0.1/index.php
+curl -kc /tmp/cookie -b /tmp/cookie https://127.0.0.1/index.php
 rm -f $WEBROOT/config/autoconfig.php
 rm -f /tmp/cookie
 
