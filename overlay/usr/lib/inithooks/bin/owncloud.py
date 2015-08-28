@@ -73,7 +73,7 @@ def main():
 
     sedcom = """
         /0 => '127.0.0.1',/ a\
-    '1 => %s',
+    '1' => '%s',
     """
 
     call(['sed', '-i', sedcom % domain, '/usr/share/owncloud/config/config.php'])
