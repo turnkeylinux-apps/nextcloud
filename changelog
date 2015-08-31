@@ -4,6 +4,10 @@ turnkey-owncloud-14.0 (1) turnkey; urgency=low
 
     - Removed the official repository for owcloud and the apt pinning conf
 
+  * Replaced PHPMyAdmin with Adminer
+
+  * Hardened default SSL settings
+
   * Note: Please refer to turnkey-core's changelog for changes common to all
     appliances. Here we only describe changes specific to this appliance.
 
