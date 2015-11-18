@@ -12,7 +12,7 @@ WEBROOT=/usr/share/owncloud
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
-sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='http://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='http://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
+sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='https://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
 
 # tweak xcache
 XCACHEINI=/etc/php5/apache2/conf.d/20-xcache.ini
