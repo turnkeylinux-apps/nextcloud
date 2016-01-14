@@ -76,6 +76,7 @@ def main():
     '1' => '%s',
     """
 
+    call(['sed', '-i', "/^'1' => /d", '/usr/share/owncloud/config/config.php'])
     call(['sed', '-i', sedcom % domain, '/usr/share/owncloud/config/config.php'])
 
     m.execute('UPDATE owncloud.users SET password=\"%s\" WHERE uid=\"admin\";' % cryptpass)

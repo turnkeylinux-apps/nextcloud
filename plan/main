@@ -8,6 +8,12 @@ php5-json
 php-xml-parser
 php-pear
 
+php-aws-sdk
+php-dropbox
+php-google-api-php-client
+smbclient
+php5-ldap
+
 bzip2
 
 owncloud
