@@ -11,7 +11,7 @@ and on top of that:
 
 - ownCloud Community Edition:
    
-   - Installed from ownCloud debian repository to /var/www/owncloud
+   - Installed from Debian repository
 
 - SSL support out of the box.
 - `Adminer`_ administration frontend for MySQL (listening on port
