@@ -1,2 +1,0 @@
-# run cron.php for owncloud
-5-59/15 * * * * www-data 	/usr/bin/php -f /usr/share/owncloud/cron.php /dev/null 2>&1

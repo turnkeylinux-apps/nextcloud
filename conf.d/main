@@ -1,23 +1,31 @@
 #!/bin/bash -ex
 
-DB_NAME=owncloud
-DB_USER=owncloud
+DB_NAME=nextcloud
+DB_USER=nextcloud
 DB_PASS=$(mcookie)
 
 ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
-WEBROOT=/usr/share/owncloud
+WEBROOT=/usr/share/nextcloud
 
+# unpack tarball to webroot and set permissions
+unzip /usr/local/src/nextcloud*.zip -d /var/www/
+mv /var/www/nextcloud* $WEBROOT
+rm -f /usr/local/src/nextcloud*
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
-sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='https://www.turnkeylinux.org/owncloud'>ownCloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
+sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='https://www.turnkeylinux.org/nextcloud'>Nextcloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
 
 # configure apache
 a2dissite 000-default
-a2ensite owncloud.conf
+a2ensite nextcloud.conf
 a2enmod rewrite
+a2enmod headers
+a2enmod env
+a2enmod dir
+a2enmod mime
 
 # start services
 service mysql start
@@ -30,28 +38,16 @@ MYSQL_ADMIN="mysqladmin --user=root --password=$MYSQL_PASS"
 $MYSQL_ADMIN create $DB_NAME
 $MYSQL_BATCH --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
 
-# autoconfig curl based install
-cat >$WEBROOT/config/autoconfig.php<<EOF
-<?php
-\$AUTOCONFIG = array(
-     "adminlogin" => "$ADMIN_NAME",
-     "adminpass" => "$ADMIN_PASS",
-     "directory" => "$WEBROOT/data",
-     "dbtype" => "mysql",
-     "dbname" => "$DB_NAME",
-     "dbuser" => "$DB_USER",
-     "dbpass" => "$DB_PASS",
-     "dbhost" => "localhost",
-     "dbtableprefix" => "",
-);
-EOF
+# command-line install
+chown -R root:root $WEBROOT
+cd $WEBROOT
+php occ maintenance:install --database "mysql" \
+--database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
+--admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS"
 
-chown www-data:www-data $WEBROOT/config/autoconfig.php
-curl -kc /tmp/cookie -b /tmp/cookie https://127.0.0.1/index.php
-rm -f $WEBROOT/config/autoconfig.php
-rm -f /tmp/cookie
+chown -R root:root $WEBROOT
+chown -R www-data:www-data /usr/share/nextcloud/{config,apps,data}
 
 # stop services
 service mysql stop
 service apache2 stop
-

@@ -5,6 +5,8 @@ php5-gd
 php5-cli
 php5-curl
 php5-json
+php5-intl
+php5-mcrypt
 php-xml-parser
 php-pear
 
@@ -13,13 +15,9 @@ php-dropbox
 php-google-api-php-client
 smbclient
 php5-ldap
+php5-imap
+php5-gmp
 
 bzip2
-
-owncloud
-owncloud-apps
-owncloud-client
-owncloud-client-cmd
-owncloud-client-doc
-owncloud-client-l10n
-owncloud-doc
+libav-tools
+libreoffice-writer
