@@ -51,3 +51,6 @@ chown -R www-data:www-data /usr/share/nextcloud/{config,apps,data}
 # stop services
 service mysql stop
 service apache2 stop
+
+#password change in inithooks fails with the default 32M limit
+sed -i s/32M/128M/ /etc/php5/cli/php.ini
