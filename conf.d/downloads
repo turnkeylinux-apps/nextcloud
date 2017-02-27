@@ -5,8 +5,7 @@ dl() {
     cd $2; curl -L -f $PROXY $1 > $3; cd -
 }
 
-#VER="9.0.51"
-VER="10.0.0"
+VER="11.0.2"
 URL="https://download.nextcloud.com/server/releases/nextcloud-${VER}.zip"
 
 dl $URL /usr/local/src nextcloud-$VER.zip
