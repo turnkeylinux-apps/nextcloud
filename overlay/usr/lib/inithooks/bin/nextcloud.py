@@ -71,7 +71,7 @@ def main():
     call(['sed', '-i', sedcom % domain, '/usr/share/nextcloud/config/config.php'])
 
     chdir("/usr/share/nextcloud")
-    call(['sudo', '-Eu', 'www-data', 'php', 'occ', 'user:resetpassword', '--password-from-env', 'admin'],env={"OC_PASS":password})
+    call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /usr/share/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
 
 if __name__ == "__main__":
     main()
