@@ -67,11 +67,11 @@ def main():
     1 => '%s',
     """
 
-    call(['sed', '-i', "/1 => /d", '/usr/share/nextcloud/config/config.php'])
-    call(['sed', '-i', sedcom % domain, '/usr/share/nextcloud/config/config.php'])
+    call(['sed', '-i', "/1 => /d", '/var/www/nextcloud/config/config.php'])
+    call(['sed', '-i', sedcom % domain, '/var/www/nextcloud/config/config.php'])
 
-    chdir("/usr/share/nextcloud")
-    call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /usr/share/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
+    chdir("/var/www/nextcloud")
+    call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /var/www/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
 
 if __name__ == "__main__":
     main()
