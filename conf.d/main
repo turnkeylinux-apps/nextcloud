@@ -7,12 +7,12 @@ DB_PASS=$(mcookie)
 ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
-WEBROOT=/usr/share/nextcloud
+WEBROOT=/var/www/nextcloud
 
 # unpack tarball to webroot and set permissions
-unzip /usr/local/src/nextcloud*.zip -d /var/www/
-mv /var/www/nextcloud* $WEBROOT
-rm -f /usr/local/src/nextcloud*
+unzip /usr/local/src/nextcloud*.zip -d /usr/local/src/
+mv /usr/local/src/nextcloud $WEBROOT
+rm -rf /usr/local/src/nextcloud*
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
@@ -46,7 +46,7 @@ php occ maintenance:install --database "mysql" \
 --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS"
 
 chown -R root:root $WEBROOT
-chown -R www-data:www-data /usr/share/nextcloud/{config,apps,data}
+chown -R www-data:www-data /var/www/nextcloud/{config,apps,data}
 
 # stop services
 service mysql stop
