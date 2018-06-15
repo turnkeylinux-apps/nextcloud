@@ -1,15 +1,20 @@
 turnkey-nextcloud-15.0 (1) turnkey; urgency=low
 
-  * Upgraded to the latest upstream source version
+  * Upgraded to the latest upstream source version (v13.0.4).
+
+  * Includes php7.0 (Debian repos).
 
   * Install Adminer directly from stretch/main repo
+
+  * LibreOffcie-writer removed (part of #1082).
+    [ Zhenya Hvorostian  ]
 
   * Replace MySQL with MariaDB
 
   * Note: Please refer to turnkey-core's changelog for changes common to all
     appliances. Here we only describe changes specdific to this appliance.
 
- -- Vlad Kuzmenko <vlad.work.here@gmail.com>  Tue, 28 Nov 2017 15:29:42 +0200
+ -- Vlad Kuzmenko <vlad.work.here@gmail.com>  Fri, 15 Jun 2018 15:29:42 +0200
 
 turnkey-nextcloud-14.2 (1) turnkey; urgency=low
 
