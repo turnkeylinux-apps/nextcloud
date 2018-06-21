@@ -23,8 +23,9 @@ and on top of that:
 Credentials *(passwords set at first boot)*
 -------------------------------------------
 
-- Webmin, SSH, MySQL, Adminer: username **root**
-- Nextcloud: username **admin**
+-  Webmin, SSH, MySQL: username **root**
+-  Adminer: username **adminer**
+-  Nextcloud: username **admin**
 
 
 .. _Nextcloud: http://nextcloud.com/
