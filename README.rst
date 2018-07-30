@@ -1,5 +1,5 @@
 Nextcloud - Share files, music, calendar
-=======================================
+========================================
 
 `Nextcloud`_ helps store your files, folders, contacts, photo galleries,
 calendars and more on a server of your choosing. Access that folder from
