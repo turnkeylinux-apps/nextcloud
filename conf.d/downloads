@@ -1,11 +1,14 @@
 #!/bin/bash -ex
 
+RELEASES="$(gh_releases nextcloud/server)"
+VER=$(echo "${RELEASES}" | grep -vi RC | grep -vi beta \
+    | grep -vi alpha | sort --version-sort | tail -1 | sed 's/^v//')
+
 dl() {
     [ "$FAB_HTTP_PROXY" ] && PROXY="--proxy $FAB_HTTP_PROXY"
     cd $2; curl -L -f $PROXY $1 > $3; cd -
 }
 
-VER="14.0.3"
 URL="https://download.nextcloud.com/server/releases/nextcloud-${VER}.zip"
 
 dl $URL /usr/local/src nextcloud-$VER.zip
