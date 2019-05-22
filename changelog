@@ -1,3 +1,13 @@
+turnkey-nextcloud-15.2 (1) turnkey; urgency=low
+
+  * Auto-detect latest upstream version
+
+  * Updated to latest upstream version
+
+  * Updated to PHP 7.2
+
+ -- Stefan Davis <stefan@turnkeylinux.org>  Tue, 14 May 2019 23:38:57 +0000
+
 turnkey-nextcloud-15.1 (1) turnkey; urgency=low
 
   * Upgraded to the latest upstream Nextcloud - v14.0.3.
