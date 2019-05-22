@@ -11,6 +11,7 @@ php7.2-mbstring
 php7.2-zip
 php-pear
 php-imagick
+php7.2-mbstring
 
 redis-server
 php-igbinary
