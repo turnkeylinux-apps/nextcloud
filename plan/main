@@ -10,6 +10,11 @@ php7.2-xml
 php7.2-mbstring
 php7.2-zip
 php-pear
+php-imagick
+
+redis-server
+php-igbinary
+php-redis
 
 smbclient
 php7.2-ldap
