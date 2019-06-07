@@ -1,12 +1,21 @@
 turnkey-nextcloud-15.2 (1) turnkey; urgency=low
 
-  * Auto-detect latest upstream version
+  * Updated Nextcloud to latest upstream version - 16.0.1.
 
-  * Updated to latest upstream version
+  * Auto-detect latest upstream version (temporarily disabled - additional
+    config required).
+    [ Stefan Davis ]
 
-  * Updated to PHP 7.2
+  * Updated PHP to 7.2 as required by Nextcloud v16.x (installed via
+    deb.suy.org).
+    [ Stefan Davis ]
 
- -- Stefan Davis <stefan@turnkeylinux.org>  Tue, 14 May 2019 23:38:57 +0000
+  * Include and configure Redis.
+    [ Stefan Davis ]
+
+  * Bump default PHP max memory to 512MB (as recommended by Nextcloud).
+
+ -- Jeremy Davis <jeremy@turnkeylinux.org>  Fri, 07 Jun 2019 11:12:50 +1000
 
 turnkey-nextcloud-15.1 (1) turnkey; urgency=low
 
