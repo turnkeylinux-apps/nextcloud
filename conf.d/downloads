@@ -1,10 +1,8 @@
 #!/bin/bash -ex
 
-# TEMP: use static version
-#RELEASES="$(gh_releases nextcloud/server)"
-#VER=$(echo "${RELEASES}" | grep -vi RC | grep -vi beta \
-#    | grep -vi alpha | sort --version-sort | tail -1 | sed 's/^v//')
-VER=16.0.1
+RELEASES="$(gh_releases nextcloud/server)"
+VER=$(echo "${RELEASES}" | grep -vi RC | grep -vi beta \
+    | grep -vi alpha | sort --version-sort | tail -1 | sed 's/^v//')
 
 dl() {
     [ "$FAB_HTTP_PROXY" ] && PROXY="--proxy $FAB_HTTP_PROXY"
