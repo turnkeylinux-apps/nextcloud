@@ -72,8 +72,7 @@ def main():
 
     chdir("/var/www/nextcloud")
     call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /var/www/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
-    call(['system', 'apache2', 'restart'])
+    call(['service', 'apache2', 'restart'])
 
 if __name__ == "__main__":
     main()
-
