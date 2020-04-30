@@ -1,26 +1,26 @@
 #include <turnkey/base>
-#include <turnkey/lamp72>
+#include <turnkey/lamp>
 
-php7.2-gd
-php7.2-cli
-php7.2-curl
-php7.2-json
-php7.2-intl
-php7.2-xml
-php7.2-mbstring
-php7.2-zip
+php7.3-gd
+php7.3-cli
+php7.3-curl
+php7.3-json
+php7.3-intl
+php7.3-xml
+php7.3-mbstring
+php7.3-zip
+php7.3-dom
 php-pear
 php-imagick
-php7.2-mbstring
 
 redis-server
 php-igbinary
 php-redis
 
 smbclient
-php7.2-ldap
-php7.2-imap
-php7.2-gmp
+php7.3-ldap
+php7.3-imap
+php7.3-gmp
 
 bzip2
-libav-tools
+ffmpeg

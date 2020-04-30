@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Set Nextcloud admin password and domain to serve
 
 Option:
@@ -18,9 +18,9 @@ from dialog_wrapper import Dialog
 
 def usage(s=None):
     if s:
-        print >> sys.stderr, "Error:", s
-    print >> sys.stderr, "Syntax: %s [options]" % sys.argv[0]
-    print >> sys.stderr, __doc__
+        print("Error:", s, file=sys.stderr)
+    print("Syntax: %s [options]" % sys.argv[0], file=sys.stderr)
+    print(__doc__, file=sys.stderr)
     sys.exit(1)
 
 DEFAULT_DOMAIN="www.example.com"
@@ -31,7 +31,7 @@ def main():
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h",
                                        ['help', 'pass=', 'domain='])
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         usage(e)
 
     password = ""
@@ -72,7 +72,7 @@ def main():
 
     chdir("/var/www/nextcloud")
     call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /var/www/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
+    call(['service', 'apache2', 'restart'])
 
 if __name__ == "__main__":
     main()
-
