@@ -66,8 +66,7 @@ usermod -a -G redis www-data
 sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/redis.conf
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
 
-chown -R root:root $WEBROOT
-chown -R www-data:www-data /var/www/nextcloud/{config,apps,data}
+chown -R www-data:www-data $WEBROOT
 
 # stop services
 service mysql stop
