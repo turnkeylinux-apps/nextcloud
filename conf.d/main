@@ -8,11 +8,13 @@ ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
 WEBROOT=/var/www/nextcloud
+DATAROOT=/var/www/nextcloud-data
 
 # unpack tarball to webroot and set permissions
 unzip /usr/local/src/nextcloud*.zip -d /usr/local/src/
 mv /usr/local/src/nextcloud $WEBROOT
 rm -rf /usr/local/src/nextcloud*
+mkdir $DATAROOT
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
@@ -39,8 +41,9 @@ mysql --batch --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhos
 chown -R root:root $WEBROOT
 cd $WEBROOT
 php occ maintenance:install --database "mysql" \
---database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
---admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS"
+    --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
+    --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS" \
+    --data-dir /var/www/nextcloud-data
 
 # adjust nextcloud config for redis
 sed -i '/^);/d' /var/www/nextcloud/config/config.php
