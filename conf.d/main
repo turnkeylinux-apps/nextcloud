@@ -8,11 +8,13 @@ ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
 WEBROOT=/var/www/nextcloud
+DATAROOT=/var/www/nextcloud-data
 
 # unpack tarball to webroot and set permissions
 unzip /usr/local/src/nextcloud*.zip -d /usr/local/src/
 mv /usr/local/src/nextcloud $WEBROOT
 rm -rf /usr/local/src/nextcloud*
+mkdir $DATAROOT
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
@@ -32,18 +34,16 @@ service mysql start
 service apache2 start
 
 # setup the database
-MYSQL_BATCH="mysql --user=root --password=$MYSQL_PASS --batch"
-MYSQL_ADMIN="mysqladmin --user=root --password=$MYSQL_PASS"
-
-$MYSQL_ADMIN create $DB_NAME
-$MYSQL_BATCH --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
+mysqladmin create $DB_NAME
+mysql --batch --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
 
 # command-line install
 chown -R root:root $WEBROOT
 cd $WEBROOT
 php occ maintenance:install --database "mysql" \
---database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
---admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS"
+    --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
+    --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS" \
+    --data-dir /var/www/nextcloud-data
 
 # adjust nextcloud config for redis
 sed -i '/^);/d' /var/www/nextcloud/config/config.php
@@ -66,8 +66,7 @@ usermod -a -G redis www-data
 sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/redis.conf
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
 
-chown -R root:root $WEBROOT
-chown -R www-data:www-data /var/www/nextcloud/{config,apps,data}
+chown -R www-data:www-data $WEBROOT
 
 # stop services
 service mysql stop

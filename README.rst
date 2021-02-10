@@ -11,7 +11,9 @@ and on top of that:
 
 - Nextcloud Server:
    
-   - Installed from official zip file. No automatic updates.
+   - Installed from official zip file to /var/www/nextcloud. No automatic
+     updates.
+   - Data directory (/var/www/nextcloud-data) outside the webroot (security).
 
      **Security note**: Updates to Nextcloud may require supervision so
      they **ARE NOT** configured to install automatically. See `Nextcloud
@@ -34,5 +36,5 @@ Credentials *(passwords set at first boot)*
 
 .. _Nextcloud: https://nextcloud.com/
 .. _TurnKey Core: https://www.turnkeylinux.org/core
-.. _Nextcloud documentation: https://docs.nextcloud.com/server/13/admin_manual/maintenance/upgrade.html
+.. _Nextcloud documentation: https://docs.nextcloud.com/server/stable/admin_manual/maintenance/upgrade.html
 .. _Adminer: https://www.adminer.org
