@@ -14,6 +14,8 @@ and on top of that:
    - Installed from official zip file to /var/www/nextcloud. No automatic
      updates.
    - Data directory (/var/www/nextcloud-data) outside the webroot (security).
+   - Includes occ_ script for command line administration and configuration.
+     Also includes turnkey-occ_ wrapper script (runs occ as www-data user).
 
      **Security note**: Updates to Nextcloud may require supervision so
      they **ARE NOT** configured to install automatically. See `Nextcloud
@@ -36,5 +38,7 @@ Credentials *(passwords set at first boot)*
 
 .. _Nextcloud: https://nextcloud.com/
 .. _TurnKey Core: https://www.turnkeylinux.org/core
+.. _occ: https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/occ_command.html
+.. _turnkey-occ: https://github.com/turnkeylinux-apps/nextcloud/blob/master/overlay/usr/local/bin/turnkey-occ
 .. _Nextcloud documentation: https://docs.nextcloud.com/server/stable/admin_manual/maintenance/upgrade.html
 .. _Adminer: https://www.adminer.org
