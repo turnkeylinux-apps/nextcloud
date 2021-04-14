@@ -16,15 +16,15 @@ from os import chdir
 
 from dialog_wrapper import Dialog
 
+DEFAULT_DOMAIN = "www.example.com"
+
+
 def usage(s=None):
     if s:
         print("Error:", s, file=sys.stderr)
     print("Syntax: %s [options]" % sys.argv[0], file=sys.stderr)
     print(__doc__, file=sys.stderr)
     sys.exit(1)
-
-DEFAULT_DOMAIN="www.example.com"
-
 
 
 def main():
@@ -67,12 +67,14 @@ def main():
     1 => '%s',
     """
 
-    call(['sed', '-i', "/1 => /d", '/var/www/nextcloud/config/config.php'])
-    call(['sed', '-i', sedcom % domain, '/var/www/nextcloud/config/config.php'])
+    conf = '/var/www/nextcloud/config/config.php'
+    call(['sed', '-i', "/1 => /d", conf])
+    call(['sed', '-i', sedcom % domain, conf])
 
-    chdir("/var/www/nextcloud")
-    call(['su', '-s', '/bin/sh', '-p', 'www-data', '-c', 'php /var/www/nextcloud/occ user:resetpassword --password-from-env admin'],env={"OC_PASS":password})
-    call(['service', 'apache2', 'restart'])
+    call(['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
+         cwd='/var/www/nextcloud',
+         env={"OC_PASS": password})
+
 
 if __name__ == "__main__":
     main()
