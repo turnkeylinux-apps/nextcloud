@@ -7,4 +7,4 @@ OCC=/var/www/nextcloud/occ
 
 COMMAND="/usr/bin/php $OCC $@"
 
-runuser $WP_USR -s /bin/bash -c "$COMMAND"
+runuser $NC_USR -s /bin/bash -c "$COMMAND"
