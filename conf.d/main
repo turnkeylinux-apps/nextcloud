@@ -8,13 +8,14 @@ ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
 WEBROOT=/var/www/nextcloud
-DATAROOT=/var/www/nextcloud-data
+DATAROOT=${WEBROOT}-data
+CONF=$WEBROOT/config/config.php
 
 # unpack tarball to webroot and set permissions
-unzip /usr/local/src/nextcloud*.zip -d /usr/local/src/
-mv /usr/local/src/nextcloud $WEBROOT
+unzip /usr/local/src/nextcloud*.zip -d $(dirname $WEBROOT)
+[[ ! -d "$WEBROOT" ]] && exit 1
 rm -rf /usr/local/src/nextcloud*
-mkdir $DATAROOT
+mkdir -p $DATAROOT
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
@@ -38,15 +39,16 @@ mysqladmin create $DB_NAME
 mysql --batch --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
 
 # command-line install
+chown -R www-data:www-data $WEBROOT $DATAROOT
 cd $WEBROOT
-php occ maintenance:install --database "mysql" \
+turnkey-occ maintenance:install --database "mysql" \
     --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
     --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS" \
-    --data-dir $DATAROOT
+    --data-dir "$DATAROOT"
 
 # adjust nextcloud config for redis
-sed -i '/^);/d' /var/www/nextcloud/config/config.php
-cat <<EOF >> /var/www/nextcloud/config/config.php
+sed -i '/^);/d' $CONF
+cat >> $CONF <<EOF
   'memcache.local' => '\OC\Memcache\Redis',
   'redis' => array(
       'host' => '/var/run/redis/redis.sock',
@@ -64,8 +66,6 @@ usermod -a -G redis www-data
 # adjust redis config
 sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/redis.conf
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
-
-chown -R www-data:www-data $WEBROOT $DATAROOT
 
 # stop services
 service mysql stop
