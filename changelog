@@ -1,3 +1,12 @@
+turnkey-nextcloud-16.2 (UNRELEASED) turnkey; urgency=low
+
+  * ...
+
+  * Include fail2ban config (security).
+    [ The Right Honourable Reverend <https://github.com/trhr> ]
+
+ -- Jeremy Davis <jeremy@turnkeylinux.org>  Tue, 27 Jul 2021 19:02:40 +1000
+
 turnkey-nextcloud-16.1 (1) turnkey; urgency=low
 
   * Updated Nextcloud to latest upstream version - 21.0.1.
