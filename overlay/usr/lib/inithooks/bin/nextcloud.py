@@ -14,7 +14,7 @@ from subprocess import call
 from os.path import *
 from os import chdir
 
-from dialog_wrapper import Dialog
+from libinithooks.dialog_wrapper import Dialog
 
 DEFAULT_DOMAIN = "www.example.com"
 

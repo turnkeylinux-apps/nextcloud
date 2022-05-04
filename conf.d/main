@@ -19,7 +19,7 @@ mkdir -p $DATAROOT
 
 # tweak footer
 TEMPLATE=$WEBROOT/core/templates/layout.guest.php
-sed -i "s|<footer>.*|<footer><p class='info' style='width: auto \!important;'><a href='https://www.turnkeylinux.org/nextcloud'>Nextcloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a></p></footer>|" $TEMPLATE
+sed -i "s|.*getLongFooter.*|<a href='https://www.turnkeylinux.org/nextcloud'>NextCloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a>|" $TEMPLATE
 
 # configure apache
 a2dissite 000-default
