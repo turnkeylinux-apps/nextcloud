@@ -1,6 +1,7 @@
 #include <turnkey/base>
 #include <turnkey/lamp>
 
+php-bcmath
 php-gd
 php-cli
 php-curl

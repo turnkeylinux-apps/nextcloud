@@ -10,10 +10,10 @@ Option:
 import sys
 import getopt
 import subprocess
+
 from subprocess import call
 from os.path import *
 from os import chdir
-
 from libinithooks.dialog_wrapper import Dialog
 
 DEFAULT_DOMAIN = "www.example.com"
@@ -71,10 +71,14 @@ def main():
     call(['sed', '-i', "/1 => /d", conf])
     call(['sed', '-i', sedcom % domain, conf])
 
-    call(['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
+    set_pass = subprocess.run(['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
          cwd='/var/www/nextcloud',
-         env={"OC_PASS": password})
-
+         env={"OC_PASS": password},
+         text=True, check_output=True)
+    if set_pass.returncode != 0:
+         print ('Exit code = 0')
+    else:
+         set_pass.stdout 
 
 if __name__ == "__main__":
     main()
