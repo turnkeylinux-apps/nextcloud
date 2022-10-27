@@ -71,14 +71,15 @@ def main():
     call(['sed', '-i', "/1 => /d", conf])
     call(['sed', '-i', sedcom % domain, conf])
 
-    set_pass = subprocess.run(['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
+set_pass = subprocess.run(
+         args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
          cwd='/var/www/nextcloud',
          env={"OC_PASS": password},
-         text=True, check_output=True)
-    if set_pass.returncode != 0:
+         text=True, check=True)
+if set_pass.returncode != 0:
          print ('Exit code = 0')
-    else:
-         set_pass.stdout 
+else:
+	 set_pass.stdout
 
 if __name__ == "__main__":
     main()
