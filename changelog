@@ -2,9 +2,11 @@ turnkey-nextcloud-17.0 (1) turnkey; urgency=low
 
   * Changing nextcloud.py file to use subprocess.run instead of call for 
     password and to check for return code.
+    [Mattie Darden <mattie@turnkeylinux.org>]
 
   * Added php-bcmath package to plan/main file.
     Closes tracker #1767.
+    [Mattie Darden <mattie@turnkeylinux.org>]
 
   * Updated Nextcloud to latest upstream version - 23.0.1. 
     [Zhenya Hvorostian <zhenya@turnkeylinux.org>]
@@ -15,7 +17,7 @@ turnkey-nextcloud-17.0 (1) turnkey; urgency=low
   * Note: Please refer to turnkey-core's 17.0 changelog for changes common to
     all appliances. Here we only describe changes specific to this appliance.
 
- -- Mattie Darden <mattie@turnkeylinux.org>  Wed, 26 Oct 2022 13:21:28 -0400
+ -- Stefan Davis <stefan@turnkeylinux.org>  Tue, 08 Nov 2022 21:49:27 +0000
 
 turnkey-nextcloud-16.1 (1) turnkey; urgency=low
 
