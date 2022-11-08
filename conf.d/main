@@ -3,7 +3,6 @@
 DB_NAME=nextcloud
 DB_USER=nextcloud
 DB_PASS=$(mcookie)
-
 ADMIN_NAME=admin
 ADMIN_PASS=turnkey
 
@@ -44,7 +43,7 @@ cd $WEBROOT
 turnkey-occ maintenance:install --database "mysql" \
     --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
     --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS" \
-    --data-dir "$DATAROOT"
+    --data-dir "$DATAROOT" 
 
 # adjust nextcloud config for redis
 sed -i '/^);/d' $CONF

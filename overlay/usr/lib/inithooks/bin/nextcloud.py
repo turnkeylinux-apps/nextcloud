@@ -10,10 +10,10 @@ Option:
 import sys
 import getopt
 import subprocess
+
 from subprocess import call
 from os.path import *
 from os import chdir
-
 from libinithooks.dialog_wrapper import Dialog
 
 DEFAULT_DOMAIN = "www.example.com"
@@ -46,9 +46,23 @@ def main():
 
     if not password:
         d = Dialog('TurnKey GNU/Linux - First boot configuration')
-        password = d.get_password(
-            "Nextcloud Password",
-            "Enter new password for the Nextcloud 'admin' account.")
+        while True:
+            password = d.get_password(
+                "Nextcloud Password",
+                "Enter new password for the Nextcloud 'admin' account.")
+            try:
+                subprocess.run(
+                         args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
+                         cwd='/var/www/nextcloud',
+                         env={"OC_PASS": password},
+                         text=True,
+                         capture_output=True,
+                         check=True)
+            except subprocess.CalledProcessError as e:
+                d.msgbox("Bad Password", e.stderr + e.stdout)
+            else:
+                break
+
 
     if not domain:
         if 'd' not in locals():
@@ -70,11 +84,6 @@ def main():
     conf = '/var/www/nextcloud/config/config.php'
     call(['sed', '-i', "/1 => /d", conf])
     call(['sed', '-i', sedcom % domain, conf])
-
-    call(['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
-         cwd='/var/www/nextcloud',
-         env={"OC_PASS": password})
-
 
 if __name__ == "__main__":
     main()
