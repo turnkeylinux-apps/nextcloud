@@ -1,8 +1,8 @@
 #!/bin/bash -ex
 
 RELEASES="$(gh_releases nextcloud/server)"
-VER=$(echo "${RELEASES}" | grep -vi RC | grep -vi beta \
-    | grep -vi alpha | sort --version-sort | tail -1 | sed 's/^v//')
+VER=$(echo "${RELEASES}" | grep -vi 'alpha\|beta\|rc' | sort --version-sort \
+                         | tail -1 | sed 's/^v//')
 
 dl() {
     [ "$FAB_HTTP_PROXY" ] && PROXY="--proxy $FAB_HTTP_PROXY"

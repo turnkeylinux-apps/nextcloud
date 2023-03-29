@@ -1,3 +1,11 @@
+turnkey-nextcloud-17.2 (1) turnkey; urgency=low
+
+  * Updated Nextcloud to latest upstream version - 26.0.0
+
+  * Includes PHP 8.1 (required by Nextcloud v24+).
+
+ -- Jeremy Davis <jeremy@turnkeylinux.org>  Sun, 26 Mar 2023 22:54:22 +0000
+
 turnkey-nextcloud-17.1 (1) turnkey; urgency=low
 
   * Updated all Debian packages to latest.
