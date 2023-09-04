@@ -1,3 +1,11 @@
+turnkey-nextcloud-18.0 (1) turnkey; urgency=low
+
+  * Updated Nextcloud to latest upstream version - 27.0.2
+
+  * Includes PHP from debian repos.
+
+ -- Stefan Davis <stefan@turnkeylinux.org>  Mon, 04 Sep 2023 22:17:44 +0000
+
 turnkey-nextcloud-17.2 (1) turnkey; urgency=low
 
   * Updated Nextcloud to latest upstream version - 26.0.0

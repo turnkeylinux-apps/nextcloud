@@ -46,10 +46,12 @@ def main():
 
     if not password:
         d = Dialog('TurnKey GNU/Linux - First boot configuration')
+        prefix = ''
         while True:
             password = d.get_password(
                 "Nextcloud Password",
-                "Enter new password for the Nextcloud 'admin' account.")
+                prefix + "Enter new password for the Nextcloud 'admin' account.",
+                pass_req=10)
             try:
                 subprocess.run(
                          args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
@@ -59,9 +61,15 @@ def main():
                          capture_output=True,
                          check=True)
             except subprocess.CalledProcessError as e:
-                d.msgbox("Bad Password", e.stderr + e.stdout)
+                prefix = e.stderr + e.stdout + '\n'
             else:
                 break
+    else:
+        subprocess.run(
+                 args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
+                 cwd='/var/www/nextcloud',
+                 env={"OC_PASS": password},
+                 text=True)
 
 
     if not domain:
