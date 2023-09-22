@@ -1,28 +1,28 @@
 #include <turnkey/base>
-#include <turnkey/lamp81>
+#include <turnkey/lamp>
 
-php8.1-bcmath
-php8.1-gd
-php8.1-cli
-php8.1-curl
-//php-json /* virtual package in sury.org */
-php8.1-intl
-php8.1-xml
-php8.1-mbstring
-php8.1-zip
-php8.1-dom
+php-bcmath
+php-gd
+php-cli
+php-curl
+php-json /* virtual package in sury.org */
+php-intl
+php-xml
+php-mbstring
+php-zip
+php-dom
 php-pear
-php8.1-imagick
+php-imagick
 libmagickcore-6.q16-6-extra
 
 redis-server
-php8.1-igbinary
-php8.1-redis
+php-igbinary
+php-redis
 
 smbclient
-php8.1-ldap
-php8.1-imap
-php8.1-gmp
+php-ldap
+php-imap
+php-gmp
 
 bzip2
 ffmpeg

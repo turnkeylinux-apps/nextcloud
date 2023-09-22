@@ -56,6 +56,9 @@ cat >> $CONF <<EOF
   ),
   'filelocking.enabled' => true,
   'memcache.locking' => '\OC\Memcache\Redis',
+  'log_type' => 'file',
+  'logfile' => '/var/www/nextcloud-data/nextcloud.log',
+  'loglevel' => 3
 );
 EOF
 
