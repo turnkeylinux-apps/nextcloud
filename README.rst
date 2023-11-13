@@ -28,6 +28,26 @@ and on top of that:
   password recovery).
 - Webmin modules for configuring Apache2, PHP, MySQL and Postfix.
 
+Nextcloud Updating | PHP Upgrade
+-------------------------------------------
+Altought it might be simple for you NextCloud is a very Enterprise Heavy Duty Application
+and many people may ask: How do I update nextcloud?
+
+It is preatty Straight forward in the Configuration>General>Update Tab but you might encounter PHP update issues.
+
+[@JedMeister Already talked about it here](https://www.turnkeylinux.org/forum/support/wed-20220824-1719/update-php-tkl-wordpress#comment-51808)
+
+[And also here](https://www.turnkeylinux.org/forum/support/fri-20211203-1615/upgrading-php-7329-php-7333#comment-50598)
+
+From Version 23 and over PHP7.4 is recomended but is not a smooth update, be sure to have a backup of your instance.
+Some packages aren't in the system in 7.3 and as JedScript is based on used NextCloud PHP previusly installed packages it might crash.
+
+'''
+apt install php7.4-redis
+'''
+is missing from the procedure.
+
+
 Credentials *(passwords set at first boot)*
 -------------------------------------------
 
