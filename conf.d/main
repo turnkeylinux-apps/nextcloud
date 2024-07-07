@@ -16,9 +16,34 @@ unzip /usr/local/src/nextcloud*.zip -d $(dirname $WEBROOT)
 rm -rf /usr/local/src/nextcloud*
 mkdir -p $DATAROOT
 
-# tweak footer
-TEMPLATE=$WEBROOT/core/templates/layout.guest.php
-sed -i "s|.*getLongFooter.*|<a href='https://www.turnkeylinux.org/nextcloud'>NextCloud Appliance</a> \&ndash; Powered by <a href='https://www.turnkeylinux.org'>TurnKey Linux</a>|" $TEMPLATE
+# tweak footer with sanity checking
+# ----------------------------------
+
+# feedback funcs
+error() { echo "ERROR: $*" >&2; exit 1; }
+success() { echo "SUCCESS: $*"; }
+
+# vars
+template="$WEBROOT/core/templates/layout.guest.php"
+search='$theme->getLongFooter()'
+replace='<a href="https://www.turnkeylinux.org/nextcloud">NextCloud Appliance</a><br>Powered by <a href="https://www.turnkeylinux.org">TurnKey Linux</a>'
+
+# check $template file exists
+if [[ -f "$template" ]]; then
+    # ensure that $template contains exactly one instance of $search
+    instance=$(grep -o "$search" "$template" | wc -l)
+    if [[ $instance -eq 0 ]]; then
+        error "no instances of search term '$search' found in $template"
+    elif [[ $instance -eq 1 ]]; then
+        success "exactly $instances of '$search' found in $template"
+        sed -i "/$search/ s|$search|'$replace'|" "$template"
+    else
+        error "$instance of '$search' found in $template"
+    fi
+else
+    error "template file '$template' not found"
+fi
+# ------------
 
 # configure apache
 a2dissite 000-default
