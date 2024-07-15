@@ -10,10 +10,11 @@ Option:
 import sys
 import getopt
 import subprocess
+import time
+import os
+import random
+import string
 
-from subprocess import call
-from os.path import *
-from os import chdir
 from libinithooks.dialog_wrapper import Dialog
 
 DEFAULT_DOMAIN = "www.example.com"
@@ -27,7 +28,32 @@ def usage(s=None):
     sys.exit(1)
 
 
+def set_password(password, interactive):
+    local_env = os.environ.copy()
+    local_env["OC_PASS"] = password
+    success = True
+    try:
+        subprocess.run(
+                    args=['/usr/local/bin/turnkey-occ', 'user:resetpassword',
+                          '--password-from-env', 'admin'],
+                    cwd='/var/www/nextcloud',
+                    env=local_env,
+                    text=True,
+                    capture_output=True,
+                    check=True)
+    except subprocess.CalledProcessError as e:
+        success = False
+        print(e.stdout)
+        print(e.stderr, file=sys.stderr)
+        # if interactive, ideally we should wait for user to read and then
+        # click an 'ok' button, but 10 sec sleep will do for now
+        if interactive:
+            time.sleep(10)
+    return success
+
+
 def main():
+    opts = []
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h",
                                        ['help', 'pass=', 'domain='])
@@ -43,34 +69,26 @@ def main():
             password = val
         elif opt == '--domain':
             domain = val
-
     if not password:
+        prefix = ""
         d = Dialog('TurnKey GNU/Linux - First boot configuration')
-        prefix = ''
         while True:
             password = d.get_password(
                 "Nextcloud Password",
-                prefix + "Enter new password for the Nextcloud 'admin' account.",
+                prefix + "Enter new password for the Nextcloud 'admin'"
+                " account.",
                 pass_req=10)
-            try:
-                subprocess.run(
-                         args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
-                         cwd='/var/www/nextcloud',
-                         env={"OC_PASS": password},
-                         text=True,
-                         capture_output=True,
-                         check=True)
-            except subprocess.CalledProcessError as e:
-                prefix = e.stderr + e.stdout + '\n'
-            else:
+            if set_password(password, True):
                 break
+            else:
+                prefix = "Please try again\n"
     else:
-        subprocess.run(
-                 args = ['/usr/local/bin/turnkey-occ', 'user:resetpassword', '--password-from-env', 'admin'],
-                 cwd='/var/www/nextcloud',
-                 env={"OC_PASS": password},
-                 text=True)
-
+        if not set_password(password, False):
+            chars = string.ascii_letters + string.digits + string.punctuation
+            new_pass = ''.join(random.choices(chars, k=36))
+            print(f"Setting password '{password}' failed", file=sys.stderr)
+            print(f"Setting random password: {new_pass}", file=sys.stderr)
+            set_password(new_pass, False)
 
     if not domain:
         if 'd' not in locals():
@@ -90,8 +108,9 @@ def main():
     """
 
     conf = '/var/www/nextcloud/config/config.php'
-    call(['sed', '-i', "/1 => /d", conf])
-    call(['sed', '-i', sedcom % domain, conf])
+    subprocess.call(['sed', '-i', "/1 => /d", conf])
+    subprocess.call(['sed', '-i', sedcom % domain, conf])
+
 
 if __name__ == "__main__":
     main()
