@@ -53,6 +53,7 @@ def set_password(password, interactive):
 
 
 def main():
+    exit_code = 0
     opts = []
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h",
@@ -84,6 +85,7 @@ def main():
                 prefix = "Please try again\n"
     else:
         if not set_password(password, False):
+            exit_code = 1
             chars = string.ascii_letters + string.digits + string.punctuation
             new_pass = ''.join(random.choices(chars, k=36))
             print(f"Setting password '{password}' failed", file=sys.stderr)
@@ -110,6 +112,8 @@ def main():
     conf = '/var/www/nextcloud/config/config.php'
     subprocess.call(['sed', '-i', "/1 => /d", conf])
     subprocess.call(['sed', '-i', sedcom % domain, conf])
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
