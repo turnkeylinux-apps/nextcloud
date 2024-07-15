@@ -2,6 +2,9 @@ turnkey-nextcloud-18.1 (1) turnkey; urgency=low
 
   * Update Nextcloud to latest upstream version - v29.0.3.
 
+  * Update Nextcloud specific inithook to manage password setting better -
+    closes #1901.
+
   * Configuration console (confconsole) - v2.1.6:
      - Bugfix broken DNS-01 Let's Encrypt challenge - closes #1876 & #1895.
       Fixed in v2.1.5.
