@@ -5,6 +5,6 @@
 NC_USR=${NC_USR:-www-data}
 OCC=/var/www/nextcloud/occ
 
-COMMAND="/usr/bin/php $OCC $@"
+COMMAND="/usr/bin/php $OCC $(printf '%q ' "$@")"
 
 runuser $NC_USR -s /bin/bash -c "$COMMAND"
