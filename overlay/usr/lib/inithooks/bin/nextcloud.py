@@ -174,16 +174,13 @@ def main():
                           "err")
 
     if not domain:
-        prefilled_domain = inithooks_cache.read("APP_DOMAIN")
-        if not prefilled_domain:
-            prefilled_domain = DEFAULT_DOMAIN
         if "d" not in locals():
             d = Dialog("TurnKey GNU/Linux - First boot configuration")
 
         domain = d.get_input(
             "Nextcloud Domain",
             "Enter the domain to serve Nextcloud.",
-            prefilled_domain
+            DEFAULT_DOMAIN
         )
 
     if domain == "DEFAULT":
