@@ -114,7 +114,10 @@ def set_random_pass():
         match password[0]:
             case 0:
                 # success
-                log.write(f"admin random password: {random_pass}", "warn")
+                pass_file = "/root/nextcloud_random_password"
+                with open(pass_file) as fob:
+                    fob.write(f"{random_pass}\n")
+                log.write(f"admin random password set: see {pass_file}", "warn")
                 return
             case 1:
                 # should occur only in extremely rare cases
