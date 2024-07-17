@@ -60,9 +60,9 @@ def set_password(password: str) -> tuple[int, str]:
     # failure/error handling
     else:
         skip_pass = ("\nTo skip setting password: Skip-password"
-                     "\n\t- set manually later")
+                     "\n- fix issues & set password manually")
         rand_pass = ("\nTo set random password: Random1234"
-                     "\n\t- check log for password")
+                     "\n- see inithooks log for password")
         # occ seems to only output to stdout - even if stacktrace
         # so write stdout to log regardless
         log.write(p.stdout, "err")
@@ -77,8 +77,9 @@ def set_password(password: str) -> tuple[int, str]:
             error_code = 2
             head = "Nextcloud exception: "
             tail = ("\nAre all services running?"
-                    f"\nCheck Inithooks log for info{skip_pass}")
+                    f" See Inithooks log for info{skip_pass}")
             if "redis" in p.stdout.lower():
+                tail = tail.format('redis')
                 msg = f"{head}Redis problem{tail}"
             elif "database":
                 msg = f"{head}Database problem{tail}"
@@ -88,7 +89,7 @@ def set_password(password: str) -> tuple[int, str]:
         # some other error
         else:
             error_code = 3
-            msg = f"Unexpected Nextcloud error{tail_top}{skip_pass}{skip_pass}"
+            msg = f"Unexpected Nextcloud error{rand_pass}{skip_pass}"
 
         return (error_code, f"\n{msg}")
 
@@ -173,7 +174,9 @@ def main():
                           "err")
 
     if not domain:
-        prefilled_domain = inithooks_cache.read("APP_DOMAIN", DEFAULT_DOMAIN)
+        prefilled_domain = inithooks_cache.read("APP_DOMAIN")
+        if not prefilled_domain:
+            prefilled_domain = DEFAULT_DOMAIN
         if "d" not in locals():
             d = Dialog("TurnKey GNU/Linux - First boot configuration")
 
