@@ -21,6 +21,10 @@ from libinithooks import inithooks_cache
 DEFAULT_DOMAIN = "www.example.com"
 log = InitLog("nextcloud")
 
+ERR_PASSWORD = 1
+ERR_SERVICE = 2
+ERR_UNKNOWN = 3
+
 
 def usage(s=None):
     if s:
@@ -33,9 +37,9 @@ def usage(s=None):
 def set_password(password: str) -> tuple[int, str]:
     """Set Nextcloud password - returns code & message
     - if succcessful - return 0
-    - if password complexity failure - return 1
-    - if exception - return 2
-    - other unknown error - return 3
+    - if password complexity failure - return ERR_PASSWORD
+    - if exception - return ERR_SERVICE
+    - other unknown error - return ERR_UNKNOWN
     """
     local_env = os.environ.copy()
     local_env["OC_PASS"] = password
@@ -69,12 +73,12 @@ def set_password(password: str) -> tuple[int, str]:
 
         # password complexity failure
         if "password" in p.stdout.lower():
-            error_code = 1
+            error_code = ERR_PASSWORD
             msg = f"{p.stdout}{rand_pass}"
 
         # nextcloud exception
         elif "exception" in p.stdout.lower():
-            error_code = 2
+            error_code = ERR_SERVICE
             head = "Nextcloud exception: "
             tail = ("\nAre all services running?"
                     f" See Inithooks log for info{skip_pass}")
@@ -88,7 +92,7 @@ def set_password(password: str) -> tuple[int, str]:
 
         # some other error
         else:
-            error_code = 3
+            error_code = ERR_UNKNOWN
             msg = f"Unexpected Nextcloud error{rand_pass}{skip_pass}"
 
         return (error_code, f"\n{msg}")
