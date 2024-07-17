@@ -13,6 +13,7 @@ import subprocess
 import os
 import random
 import string
+import secrets
 
 from libinithooks.dialog_wrapper import Dialog
 from libinithooks.inithooks_log import InitLog
@@ -99,8 +100,15 @@ def set_password(password: str) -> tuple[int, str]:
 
 
 def set_random_pass():
-    chars = string.ascii_letters + string.digits + string.punctuation
-    random_pass = "".join(random.choices(chars, k=36))
+    alphabet = string.ascii_letters + string.digits
+    while True:
+        random_pass = ''.join(secrets.choice(alphabet) for _ in range(32))
+        if (
+            any(c.islower() for c in random_pass)
+            and any(c.isupper() for c in random_pass)
+            and sum(c.isdigit() for c in random_pass)
+        ):
+            break
     while True:
         password = set_password(random_pass)
         match password[0]:
