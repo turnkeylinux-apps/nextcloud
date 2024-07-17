@@ -173,9 +173,7 @@ def main():
                           "err")
 
     if not domain:
-        prefilled_domain = inithooks_cache.read("APP_DOMAIN")
-        if not prefilled_domain:
-            prefilled_domain = DEFAULT_DOMAIN
+        prefilled_domain = inithooks_cache.read("APP_DOMAIN", DEFAULT_DOMAIN)
         if "d" not in locals():
             d = Dialog("TurnKey GNU/Linux - First boot configuration")
 
