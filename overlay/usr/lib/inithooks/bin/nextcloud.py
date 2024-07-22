@@ -110,7 +110,7 @@ def set_random_pass() -> tuple[int, str]:
         if (
             any(c.islower() for c in random_pass)
             and any(c.isupper() for c in random_pass)
-            and sum(c.isdigit() for c in random_pass)
+            and any(c.isdigit() for c in random_pass)
         ):
             break
     while True:
@@ -208,9 +208,7 @@ def main():
             else:
                 hook_exit_code = 1
                 if exit_code == ERR_EXCEPTION:
-                    print(services)
                     for service in services:
-                        print(service)
                         msg = f"{msg}\n - failed to connect to: {service}"
                 else:
                     msg = ("An unrecognised error has occured:"
@@ -235,7 +233,11 @@ def main():
                           " manually set a password once resolved")
                 break
             elif choice == "Random":
-                _ = set_random_pass()
+                exit_code, msg = set_random_pass()
+                if exit_code != 0:
+                    hook_exit_code = 1
+                    d.error(f"{msg}\n\n Ok to continue and check logs"
+                            " to debug issue")
                 break
             else:  # choice == "Retry"
                 log.write("Retrying setting password", "info")
@@ -247,8 +249,8 @@ def main():
             log.write("setting admin password failed", "err")
             hook_exit_code = 1
             if exit_code == ERR_PASSWORD:
-                _, _ = set_random_pass()
-            else:
+                exit_code, _ = set_random_pass()
+            if exit_code != 0:
                 log.write("admin password not set due to Nextcloud error/s"
                           " - resolve problem and set manually",
                           "err")
