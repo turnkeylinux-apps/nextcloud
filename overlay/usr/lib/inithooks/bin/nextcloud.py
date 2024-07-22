@@ -11,7 +11,6 @@ import sys
 import getopt
 import subprocess
 import os
-import random
 import string
 import secrets
 
@@ -22,9 +21,13 @@ from libinithooks import inithooks_cache
 DEFAULT_DOMAIN = "www.example.com"
 log = InitLog("nextcloud")
 
+# set_password return value constants
+SUCCESS = 0
 ERR_PASSWORD = 1
-ERR_SERVICE = 2
+ERR_EXCEPTION = 2
 ERR_UNKNOWN = 3
+
+RAND_PWD_FILE = "/root/nextcloud_random_admin_password"
 
 
 def usage(s=None):
@@ -35,12 +38,14 @@ def usage(s=None):
     sys.exit(1)
 
 
-def set_password(password: str) -> tuple[int, str]:
-    """Set Nextcloud password - returns code & message
-    - if succcessful - return 0
-    - if password complexity failure - return ERR_PASSWORD
-    - if exception - return ERR_SERVICE
-    - other unknown error - return ERR_UNKNOWN
+def set_password(password: str) -> tuple[int, str, list[str]]:
+    """Set Nextcloud password
+    returns exit_code, message & list of failed services
+        exit_code is one of:
+            - SUCCESS
+            - ERR_PASSWORD
+            - ERR_EXCEPTION
+            - ERR_UNKNOWN
     """
     local_env = os.environ.copy()
     local_env["OC_PASS"] = password
@@ -56,53 +61,52 @@ def set_password(password: str) -> tuple[int, str]:
         text=True,
         capture_output=True,
     )
+    # Success :)
+    if p.returncode == SUCCESS:
+        log.write("admin password set successfully")
+        return (SUCCESS, "", [])
 
-    # password successfully set
-    if p.returncode == 0:
-        log.write("admin password set")
-        return (0, "")
-
-    # failure/error handling
+    # password setting failure/error handling
     else:
-        skip_pass = ("\nTo skip setting password: Skip-password"
-                     "\n- fix issues & set password manually")
-        rand_pass = ("\nTo set random password: Random1234"
-                     "\n- see inithooks log for password")
         # occ seems to only output to stdout - even if stacktrace
-        # so write stdout to log regardless
-        log.write(p.stdout, "err")
+        # but just in case that changes
+        occ_output = p.stdout + p.stderr
+        services = []
+        # log raw occ output - including full stacktrace if relevant
+        log.write(occ_output, "err")
 
         # password complexity failure
-        if "password" in p.stdout.lower():
+        if "password" in occ_output.lower():
             error_code = ERR_PASSWORD
-            msg = f"{p.stdout}{rand_pass}"
+            msg = occ_output.rstrip()
 
         # nextcloud exception
-        elif "exception" in p.stdout.lower():
-            error_code = ERR_SERVICE
-            head = "Nextcloud exception: "
-            tail = ("\nAre all services running?"
-                    f" See Inithooks log for info{skip_pass}")
-            if "redis" in p.stdout.lower():
-                tail = tail.format('redis')
-                msg = f"{head}Redis problem{tail}"
-            elif "database":
-                msg = f"{head}Database problem{tail}"
-            else:
-                msg = f"{head}Unknown problem{tail}"
+        elif "exception" in occ_output.lower():
+            error_code = ERR_EXCEPTION
+            msg = "Nextcloud exception:"
 
-        # some other error
+            if "redis" in occ_output.lower():
+                services.append("Redis")
+            if "database" in occ_output.lower():
+                services.append("MariaDB")
+            if services:
+                msg = f"{msg} Can't connect to service(s)"
+            else:
+                msg = f"{msg} Unknown exception"
+
+        # any other unknown/unexpected error
         else:
             error_code = ERR_UNKNOWN
-            msg = f"Unexpected Nextcloud error{rand_pass}{skip_pass}"
+            msg = f"Unexpected Nextcloud error"
 
-        return (error_code, f"\n{msg}")
+        return (error_code, msg, services)
 
 
-def set_random_pass():
-    alphabet = string.ascii_letters + string.digits
+def set_random_pass() -> tuple[int, str]:
+    """Returns exit_code & msg"""
+    chars = string.ascii_letters + string.digits
     while True:
-        random_pass = ''.join(secrets.choice(alphabet) for _ in range(32))
+        random_pass = ''.join(secrets.choice(chars) for _ in range(32))
         if (
             any(c.islower() for c in random_pass)
             and any(c.isupper() for c in random_pass)
@@ -110,30 +114,45 @@ def set_random_pass():
         ):
             break
     while True:
-        password = set_password(random_pass)
-        match password[0]:
-            case 0:
-                # success
-                pass_file = "/root/nextcloud_random_password"
-                with open(pass_file) as fob:
+        exit_code, msg, _ = set_password(random_pass)
+        if exit_code == ERR_PASSWORD:
+            # a 32 char random string should never have this condition, but
+            # if it does, then retrying should resolve it
+            continue
+        else:
+            if exit_code == SUCCESS:
+                with open(RAND_PWD_FILE, "w") as fob:
                     fob.write(f"{random_pass}\n")
-                log.write(f"admin random password set: see {pass_file}", "warn")
-                return
-            case 1:
-                # should occur only in extremely rare cases
-                # trying again should work
-                continue
-            case _:
-                # exceptions and unknown errors
-                log.write(
-                    f"password setting failed - left unset:"
-                    f"\n{password[1]}", "err"
-                )
-                return
+                msg = f"Admin user random password set: see {RAND_PWD_FILE}"
+                log.write(msg, "warn")
+            else:
+                # all other errors
+                msg = f"Setting password failed - left unset:\n{msg}"
+                log.write(msg, "err")
+            return (exit_code, msg)
+
+
+def err_response_choice(
+        dialog: Dialog,
+        title: str,
+        msg: str,
+        option1: str,
+        option2: str
+) -> str:
+    choice = dialog.yesno(
+            title=title,
+            text=msg,
+            yes_label=option1.capitalize(),
+            no_label=option2.capitalize()
+    )
+    if choice:
+        return option1
+    else:
+        return option2
 
 
 def main():
-    exit_code = 0
+    hook_exit_code = 0
     opts = []
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help",
@@ -151,41 +170,87 @@ def main():
         elif opt == "--domain":
             domain = val
 
+    random = (
+        "Random",
+        f" - Set random admin password; will be saved to {RAND_PWD_FILE}"
+    )
+    skip = (
+        "Skip",
+        " - Skip setting an admin password & set manually later"
+    )
+    retry = (
+        "Retry",
+        " - Try setting the admin password again"
+    )
     if not password:
-        message = "Enter new password for the Nextcloud 'admin' account."
         d = Dialog("TurnKey GNU/Linux - First boot configuration")
+
         while True:
             password = d.get_password(
                 "Nextcloud Password",
-                message,
+                "Enter new password for the Nextcloud 'admin' account.",
                 pass_req=10,
             )
             assert password is not None
-            match password:
-                case "Random1234":
-                    password = set_random_pass()
-                    exit_code = 1
-                    break
-                case "Skip-password":
-                    log.write("admin password not set - please set manually",
-                              "err")
-                    exit_code = 1
-                    break
-                case _:
-                    new_password = set_password(password)
-            if new_password[0] == 0:
+            exit_code, msg, services = set_password(password)
+
+            if exit_code == SUCCESS:
                 break
+            title = "Nextcloud Error"
+            if exit_code == ERR_PASSWORD:
+                msg = (f"{msg}\n\nRetry or set a random password."
+                       f"\n\n{''.join(retry)} (recommended)"
+                       f"\n\n{''.join(random)}")
+                option1 = retry[0]
+                option2 = random[0]
+
+            # handle non-password related errors
             else:
-                message = new_password[1]
+                hook_exit_code = 1
+                if exit_code == ERR_EXCEPTION:
+                    print(services)
+                    for service in services:
+                        print(service)
+                        msg = f"{msg}\n - failed to connect to: {service}"
+                else:
+                    msg = ("An unrecognised error has occured:"
+                           f"\n{msg}")
+                msg = (f"{msg}\n\nThis error is likely unrecoverable until"
+                       " the underlying issue is resolved. Check log for"
+                       " for more detals.\n\nIt is recommended that you skip"
+                       " password and investigate the issue."
+                       f"\n\n{''.join(skip)} (recommended)"
+                       f"\n\n{''.join(retry)}")
+                option1 = skip[0]
+                option2 = retry[0]
+            choice = err_response_choice(
+                    d,
+                    title,
+                    msg,
+                    option1,
+                    option2
+            )
+            if choice == "Skip":
+                log.write("Skipping password setting due to issues. Be sure to"
+                          " manually set a password once resolved")
+                break
+            elif choice == "Random":
+                _ = set_random_pass()
+                break
+            else:  # choice == "Retry"
+                log.write("Retrying setting password", "info")
+                continue
+
     else:
-        cli_password = set_password(password)
-        if cli_password[0] != 0:
+        exit_code, _, _ = set_password(password)
+        if exit_code != 0:
             log.write("setting admin password failed", "err")
-            exit_code = 1
-            if cli_password[0] == 1:
-                set_random_pass()
+            hook_exit_code = 1
+            if exit_code == ERR_PASSWORD:
+                _, _ = set_random_pass()
             else:
-                log.write("admin password not set - please set manually",
+                log.write("admin password not set due to Nextcloud error/s"
+                          " - resolve problem and set manually",
                           "err")
 
     if not domain:
@@ -212,7 +277,7 @@ def main():
     subprocess.call(["sed", "-i", "/1 => /d", conf])
     subprocess.call(["sed", "-i", sedcom % domain, conf])
 
-    sys.exit(exit_code)
+    sys.exit(hook_exit_code)
 
 
 if __name__ == "__main__":
