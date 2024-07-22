@@ -3,15 +3,15 @@
 DB_NAME=nextcloud
 DB_USER=nextcloud
 DB_PASS=$(mcookie)
-ADMIN_NAME=admin
-ADMIN_PASS=turnkey
+ADMIN_NAME="admin"
+ADMIN_PASS=$(mcookie)
 
 WEBROOT=/var/www/nextcloud
 DATAROOT=${WEBROOT}-data
 CONF=$WEBROOT/config/config.php
 
 # unpack tarball to webroot and set permissions
-unzip /usr/local/src/nextcloud*.zip -d $(dirname $WEBROOT)
+unzip /usr/local/src/nextcloud*.zip -d "$(dirname $WEBROOT)"
 [[ ! -d "$WEBROOT" ]] && exit 1
 rm -rf /usr/local/src/nextcloud*
 mkdir -p $DATAROOT
@@ -25,6 +25,8 @@ success() { echo "SUCCESS: $*"; }
 
 # vars
 template="$WEBROOT/core/templates/layout.guest.php"
+# $theme is a string not a var
+# shellcheck disable=SC2016
 search='$theme->getLongFooter()'
 replace='<a href="https://www.turnkeylinux.org/nextcloud">NextCloud Appliance</a><br>Powered by <a href="https://www.turnkeylinux.org">TurnKey Linux</a>'
 
@@ -35,7 +37,7 @@ if [[ -f "$template" ]]; then
     if [[ $instance -eq 0 ]]; then
         error "no instances of search term '$search' found in $template"
     elif [[ $instance -eq 1 ]]; then
-        success "exactly $instances of '$search' found in $template"
+        success "exactly $instance of '$search' found in $template"
         sed -i "/$search/ s|$search|'$replace'|" "$template"
     else
         error "$instance of '$search' found in $template"
