@@ -1,9 +1,15 @@
 turnkey-nextcloud-18.1 (1) turnkey; urgency=low
 
-  * Update Nextcloud to latest upstream version - v29.0.3.
+  * Update Nextcloud to latest upstream version - v29.0.4.
 
   * Update Nextcloud specific inithook to manage password setting better -
     closes #1901.
+
+  * Improve turnkey-occ script.
+
+  * Remove some systemd ervice hardening for containers that include redis.
+
+  * v18.1 rebuild - includes latest Debian & TurnKey packages.
 
   * Configuration console (confconsole) - v2.1.6:
      - Bugfix broken DNS-01 Let's Encrypt challenge - closes #1876 & #1895.
@@ -33,7 +39,7 @@ turnkey-nextcloud-18.1 (1) turnkey; urgency=low
     php.ini via appliance Makefile (PHP_MAX_EXECUTION_TIME &
     PHP_MAX_INPUT_VARS).
 
- -- Jeremy Davis <jeremy@turnkeylinux.org>  Sat, 06 Jul 2024 13:48:36 +0000
+ -- Jeremy Davis <jeremy@turnkeylinux.org>  Mon, 22 Jul 2024 07:39:49 +0000
 
 turnkey-nextcloud-18.0 (1) turnkey; urgency=low
 
