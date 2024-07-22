@@ -3,11 +3,11 @@ turnkey-nextcloud-18.1 (1) turnkey; urgency=low
   * Update Nextcloud to latest upstream version - v29.0.4.
 
   * Update Nextcloud specific inithook to manage password setting better -
-    closes #1901.
+    closes #1898 & #1901.
 
   * Improve turnkey-occ script.
 
-  * Remove some systemd ervice hardening for containers that include redis.
+  * Override some systemd service hardening in containers that include redis.
 
   * v18.1 rebuild - includes latest Debian & TurnKey packages.
 
