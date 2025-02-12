@@ -47,6 +47,10 @@ else
 fi
 # ------------
 
+# configure php
+
+sed -i 's/^\(opcache.interned_strings_buffer\) *=.*$/\1 = 32/' /etc/php/8.2/apache2/php.ini
+
 # configure apache
 a2dissite 000-default
 a2ensite nextcloud.conf
@@ -71,6 +75,9 @@ turnkey-occ maintenance:install --database "mysql" \
     --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
     --admin-user "$ADMIN_NAME" --admin-pass "$ADMIN_PASS" \
     --data-dir "$DATAROOT" 
+
+turnkey-occ maintenance:repair --include-expensive
+turnkey-occ db:add-missing-indices
 
 # adjust nextcloud config for redis
 sed -i '/^);/d' $CONF
