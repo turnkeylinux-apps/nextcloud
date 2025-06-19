@@ -1,2 +1,2 @@
 # run cron.php for nextcloud
-*/15 * * * * www-data 	/usr/bin/php -f /var/www/nextcloud/cron.php /dev/null 2>&1
+*/15 * * * * www-data 	/usr/bin/php -f /var/www/nextcloud/cron.php > /dev/null 2>&1

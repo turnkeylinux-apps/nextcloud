@@ -1,3 +1,15 @@
+turnkey-nextcloud-18.2-UNFINISHED (1) turnkey; urgency=low
+
+  * Update Nextcloud to latest upstream version - vXXXX
+
+  * Bugfix: Fix Nextcloud cron job - closes #2054.
+    [ Salvatore Martire <https://github.com/salmart-dev> ]
+
+  * v18.1 rebuild - includes latest Debian & TurnKey packages - various
+    bugfixes and improvements.
+
+ -- TODO: sign off
+
 turnkey-nextcloud-18.1 (1) turnkey; urgency=low
 
   * Update Nextcloud to latest upstream version - v29.0.4.
