@@ -42,3 +42,26 @@ Credentials *(passwords set at first boot)*
 .. _turnkey-occ: https://github.com/turnkeylinux-apps/nextcloud/blob/master/overlay/usr/local/bin/turnkey-occ
 .. _Nextcloud documentation: https://docs.nextcloud.com/server/stable/admin_manual/maintenance/upgrade.html
 .. _Adminer: https://www.adminer.org
+
+--------------------------------------------
+
+For updating the version of nextcloud you should check for the version upstream (stable or beta) This can be done in the Administration page of NC or in the /var/www/nextcloud/config/config.php file
+
+By the interface you should change the /etc/php/{your_current_version}/cli/php.ini and /etc/php/{your_current_version}/apache/php.ini max execution time to be able to download the files.
+
+You can also update by the terminal following this steps
+.. code-block:: bash
+
+    $ su -l www-data -s /bin/bash
+
+    $ cd /var/www/nextcloud/updater
+
+    $ php updater.phar
+
+When asked:
+
+Should the "occ upgrade" command be executed? [Y/n] 
+
+Yes is Highly recomended
+
+For more info about this matter check the updater `documentation <https://docs.nextcloud.com/server/latest/admin_manual/maintenance/update.html>`_.
