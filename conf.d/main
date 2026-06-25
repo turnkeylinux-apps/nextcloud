@@ -32,6 +32,7 @@ a2enmod headers
 a2enmod env
 a2enmod dir
 a2enmod mime
+a2dismod evasive # nextcloud includes it's own rate limiting & mod-evasive causes issues with certain user configurations see #2044
 
 # start services
 service mysql start
