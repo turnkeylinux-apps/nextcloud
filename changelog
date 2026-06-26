@@ -1,14 +1,19 @@
-turnkey-nextcloud-18.2-UNFINISHED (1) turnkey; urgency=low
+turnkey-nextcloud-19.0 (1) turnkey; urgency=low
 
-  * Update Nextcloud to latest upstream version - vXXXX
+  * Update Nextcloud to latest upstream version - v34.0.0
 
   * Bugfix: Fix Nextcloud cron job - closes #2054.
     [ Salvatore Martire <https://github.com/salmart-dev> ]
 
-  * v18.1 rebuild - includes latest Debian & TurnKey packages - various
-    bugfixes and improvements.
+  * Bugfix: Fix Nextcloud integrity check - closes #2079.
+    [ Markus Heberling <https://github.com/tisoft> ]
 
- -- TODO: sign off
+  * Bugfix: Fix mod_evasive false positive - closes #2079.
+    [ udvarit <https://github.com/udvarit> ]
+
+  * Sury PHP updated to v8.5.
+
+ -- Stefan Davis <stefan@turnkeylinux.org>  Thu, 25 Jun 2026 15:39:02 +1000
 
 turnkey-nextcloud-18.1 (1) turnkey; urgency=low
 

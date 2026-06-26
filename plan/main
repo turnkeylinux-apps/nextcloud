@@ -10,10 +10,10 @@ php-intl
 php-xml
 php-mbstring
 php-zip
-php-dom
+php8.5-dom
 php-pear
 php-imagick
-libmagickcore-6.q16-6-extra
+libmagickcore-7.q16-10-extra
 
 redis-server
 php-igbinary
@@ -21,7 +21,6 @@ php-redis
 
 smbclient
 php-ldap
-php-imap
 php-gmp
 
 bzip2
