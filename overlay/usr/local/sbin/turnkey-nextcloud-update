@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+WEBROOT=/var/www/nextcloud
+DATAROOT=/var/www/nextcloud-data
+CONF=$WEBROOT/config/config.php
+
+restore_permissions() {
+    chown -R root:root "$WEBROOT"
+    find "$WEBROOT" -type d -exec chmod 0755 {} +
+    find "$WEBROOT" -type f -exec chmod 0644 {} +
+    install -d -o www-data -g www-data -m 0755 "$WEBROOT/custom_apps"
+    chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
+    chown root:www-data "$CONF"
+    chmod 0640 "$CONF"
+}
+
+test "$(id -u)" -eq 0 || {
+    echo "turnkey-nextcloud-update must run as root" >&2
+    exit 1
+}
+
+trap restore_permissions EXIT
+chown -R www-data:www-data "$WEBROOT"
+runuser www-data -s /bin/bash -c \
+    "/usr/bin/php '$WEBROOT/updater/updater.phar' --no-interaction"
+runuser www-data -s /bin/bash -c \
+    "/usr/bin/php '$WEBROOT/occ' upgrade --no-interaction"
+runuser www-data -s /bin/bash -c \
+    "/usr/bin/php '$WEBROOT/occ' integrity:check-core"

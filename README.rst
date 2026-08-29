@@ -11,15 +11,20 @@ and on top of that:
 
 - Nextcloud Server:
    
-   - Installed from official zip file to /var/www/nextcloud. No automatic
-     updates.
+   - Installed from a pinned official zip file to /var/www/nextcloud. No
+     automatic core updates.
    - Data directory (/var/www/nextcloud-data) outside the webroot (security).
    - Includes occ_ script for command line administration and configuration.
      Also includes turnkey-occ_ wrapper script (runs occ as www-data user).
 
-     **Security note**: Updates to Nextcloud may require supervision so
-     they **ARE NOT** configured to install automatically. See `Nextcloud
-     documentation`_ for upgrading.
+     Nextcloud core and bundled apps are root-owned. Custom apps remain an
+     explicit web-writable executable-code boundary so the app store works;
+     install only apps and updates you trust.
+
+     **Security note**: Run supervised core updates as ``root`` with
+     ``turnkey-nextcloud-update``. The command uses Nextcloud's updater and
+     restores the appliance ownership boundary afterwards. See `Nextcloud
+     documentation`_ for upgrade planning and backups.
 
 - SSL support out of the box.
 - `Adminer`_ administration frontend for MySQL (listening on port

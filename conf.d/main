@@ -9,12 +9,14 @@ ADMIN_PASS=$(mcookie)
 WEBROOT=/var/www/nextcloud
 DATAROOT=${WEBROOT}-data
 CONF=$WEBROOT/config/config.php
+VER=34.0.0
+ARCHIVE=/usr/local/src/nextcloud-${VER}.zip
 
 # unpack tarball to webroot and set permissions
-unzip /usr/local/src/nextcloud*.zip -d "$(dirname $WEBROOT)"
+unzip "$ARCHIVE" -d "$(dirname "$WEBROOT")"
 [[ ! -d "$WEBROOT" ]] && exit 1
-rm -rf /usr/local/src/nextcloud*
-mkdir -p $DATAROOT
+rm -f "$ARCHIVE"
+mkdir -p "$DATAROOT" "$WEBROOT/custom_apps"
 
 # feedback funcs
 error() { echo "ERROR: $*" >&2; exit 1; }
@@ -67,6 +69,18 @@ cat >> $CONF <<EOF
   ),
   'filelocking.enabled' => true,
   'memcache.locking' => '\OC\Memcache\Redis',
+  'apps_paths' => array(
+    array(
+      'path' => '/var/www/nextcloud/apps',
+      'url' => '/apps',
+      'writable' => false,
+    ),
+    array(
+      'path' => '/var/www/nextcloud/custom_apps',
+      'url' => '/custom_apps',
+      'writable' => true,
+    ),
+  ),
   'log_type' => 'file',
   'logfile' => '/var/www/nextcloud-data/nextcloud.log',
   'loglevel' => 3
@@ -79,6 +93,15 @@ usermod -a -G redis www-data
 # adjust redis config
 sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/redis.conf
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
+
+# Root owns Nextcloud core, bundled apps, and configuration. The web service
+# retains only data and the explicit custom-app management boundary.
+chown -R root:root "$WEBROOT"
+find "$WEBROOT" -type d -exec chmod 0755 {} +
+find "$WEBROOT" -type f -exec chmod 0644 {} +
+chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
+chown root:www-data "$CONF"
+chmod 0640 "$CONF"
 
 # stop services
 service mysql stop
