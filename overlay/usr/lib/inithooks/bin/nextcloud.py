@@ -3,6 +3,8 @@
 
 Option:
     --pass=     unless provided, will ask interactively
+    --pass-stdin
+                read the password from standard input
     --domain=   unless provided, will ask interactively
                 DEFAULT=www.example.com
 """
@@ -156,7 +158,7 @@ def main():
     opts = []
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help",
-                                       "pass=", "domain="])
+                                       "pass=", "pass-stdin", "domain="])
     except getopt.GetoptError as e:
         usage(e)
 
@@ -167,6 +169,8 @@ def main():
             usage()
         elif opt == "--pass":
             password = val
+        elif opt == "--pass-stdin":
+            password = sys.stdin.readline().rstrip("\r\n")
         elif opt == "--domain":
             domain = val
 
@@ -268,16 +272,11 @@ def main():
     if domain == "DEFAULT":
         domain = DEFAULT_DOMAIN
 
-    sedcom = """
-        /0 => 'localhost',/ a\
-    1 => '%s',
-    """
-
     inithooks_cache.write("APP_DOMAIN", domain)
-
-    conf = "/var/www/nextcloud/config/config.php"
-    subprocess.call(["sed", "-i", "/1 => /d", conf])
-    subprocess.call(["sed", "-i", sedcom % domain, conf])
+    subprocess.run([
+        "/usr/local/bin/turnkey-occ", "config:system:set",
+        "trusted_domains", "1", f"--value={domain}"
+    ], check=True)
 
     sys.exit(hook_exit_code)
 
