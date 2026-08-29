@@ -11,6 +11,7 @@ Option:
 
 import sys
 import getopt
+import grp
 import subprocess
 import os
 import string
@@ -273,10 +274,15 @@ def main():
         domain = DEFAULT_DOMAIN
 
     inithooks_cache.write("APP_DOMAIN", domain)
+    occ_env = os.environ.copy()
+    occ_env["NC_USR"] = "root"
     subprocess.run([
         "/usr/local/bin/turnkey-occ", "config:system:set",
         "trusted_domains", "1", f"--value={domain}"
-    ], check=True)
+    ], env=occ_env, check=True)
+    conf = "/var/www/nextcloud/config/config.php"
+    os.chown(conf, 0, grp.getgrnam("www-data").gr_gid)
+    os.chmod(conf, 0o640)
 
     sys.exit(hook_exit_code)
 
