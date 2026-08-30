@@ -60,15 +60,36 @@ $authorization = $_SERVER['HTTP_AUTHORIZATION']
     ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
     ?? '';
 $decoded = '';
-if (str_starts_with($authorization, 'Basic ')) {
-    $decoded = base64_decode(substr($authorization, 6), true) ?: '';
+if (PHP_SAPI === 'cli') {
+    $username = 'admin';
+    $password = rtrim(stream_get_contents(STDIN), "\r\n");
+} else {
+    if (str_starts_with($authorization, 'Basic ')) {
+        $decoded = base64_decode(substr($authorization, 6), true) ?: '';
+    }
+    [$username, $password] = array_pad(explode(':', $decoded, 2), 2, '');
 }
-[$username, $password] = array_pad(explode(':', $decoded, 2), 2, '');
 
 $request = \OCP\Server::get(\OCP\IRequest::class);
 $manager = \OCP\Server::get(\OCP\IUserManager::class);
 $session = \OCP\Server::get(\OC\User\Session::class);
 $throttler = \OCP\Server::get(\OCP\Security\Bruteforce\IThrottler::class);
+$connection = \OCP\Server::get(\OCP\IDBConnection::class);
+$query = $connection->getQueryBuilder();
+$query->select('password')
+    ->from('users')
+    ->where($query->expr()->eq(
+        'uid_lower',
+        $query->createNamedParameter('admin'),
+    ));
+$storedHash = $query->executeQuery()->fetchOne();
+$hashParts = is_string($storedHash) ? explode('|', $storedHash, 2) : [];
+$nativeHash = count($hashParts) === 2 ? $hashParts[1] : '';
+$newHash = null;
+$hasherAccepted = is_string($storedHash) && \OCP\Server::get(
+    \OCP\Security\IHasher::class,
+)->verify($password, $storedHash, $newHash);
+$nativeAccepted = $nativeHash !== '' && password_verify($password, $nativeHash);
 $clientAccepted = false;
 $clientException = null;
 try {
@@ -85,13 +106,24 @@ $backendAccepted = $manager->checkPassword('admin', $password) !== false;
 $user = $manager->get('admin');
 
 echo json_encode([
+    'input_source' => PHP_SAPI === 'cli' ? 'stdin' : 'basic',
     'basic_header_present' => str_starts_with($authorization, 'Basic '),
     'decoded_username_is_admin' => hash_equals('admin', $username),
     'php_auth_user_matches' => isset($_SERVER['PHP_AUTH_USER'])
         && hash_equals($username, $_SERVER['PHP_AUTH_USER']),
     'php_auth_password_matches' => isset($_SERVER['PHP_AUTH_PW'])
         && hash_equals($password, $_SERVER['PHP_AUTH_PW']),
-    'backend_password_accepted_in_web_runtime' => $backendAccepted,
+    'backend_password_accepted' => $backendAccepted,
+    'hasher_password_accepted' => $hasherAccepted,
+    'native_password_accepted' => $nativeAccepted,
+    'stored_hash_version' => count($hashParts) === 2 ? $hashParts[0] : null,
+    'stored_hash_algorithm' => $nativeHash === ''
+        ? null
+        : password_get_info($nativeHash)['algoName'],
+    'password_argon2id_available' => defined('PASSWORD_ARGON2ID'),
+    'password_argon2_provider' => defined('PASSWORD_ARGON2_PROVIDER')
+        ? PASSWORD_ARGON2_PROVIDER
+        : null,
     'client_login_accepted' => $clientAccepted,
     'client_login_exception' => $clientException,
     'session_logged_in' => $session->isLoggedIn(),
@@ -126,6 +158,11 @@ case "$put_status" in
         else
             echo 'authentication trace endpoint failed' >&2
         fi
+        echo '--- focused CLI authentication trace ---' >&2
+        printf '%s\n' "$password" | runuser -u www-data -- \
+            /usr/bin/php "$auth_trace" >"$work/cli-auth-trace.json"
+        cat "$work/cli-auth-trace.json" >&2
+        echo >&2
         rm -f -- "$auth_trace"
         echo '--- Nextcloud log (last 65536 bytes) ---' >&2
         tail -c 65536 /var/www/nextcloud-data/nextcloud.log >&2 || true
