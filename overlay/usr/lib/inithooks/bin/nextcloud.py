@@ -9,17 +9,13 @@ Option:
                 DEFAULT=www.example.com
 """
 
-import base64
+import sys
 import getopt
 import grp
-import os
-import secrets
-import ssl
-import string
 import subprocess
-import sys
-import urllib.error
-import urllib.request
+import os
+import string
+import secrets
 
 from libinithooks.dialog_wrapper import Dialog
 from libinithooks.inithooks_log import InitLog
@@ -36,37 +32,6 @@ ERR_UNKNOWN = 3
 ERR_VERIFY = 4
 
 RAND_PWD_FILE = "/root/nextcloud_random_admin_password"
-
-
-def verify_web_password(password: str) -> bool:
-    """Verify local DAV login before enabling read-only configuration."""
-    auth = base64.b64encode(f"admin:{password}".encode()).decode()
-    request = urllib.request.Request(
-        "https://localhost/remote.php/dav/files/admin/",
-        method="PROPFIND",
-        headers={
-            "Authorization": f"Basic {auth}",
-            "Depth": "0",
-        },
-    )
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}),
-        urllib.request.HTTPSHandler(context=context),
-    )
-    try:
-        with opener.open(request, timeout=30) as response:
-            return response.status == 207
-    except urllib.error.HTTPError as error:
-        log.write(
-            f"admin WebDAV verification failed with HTTP {error.code}",
-            "err",
-        )
-    except (urllib.error.URLError, TimeoutError, OSError):
-        log.write("admin WebDAV verification could not reach local HTTPS", "err")
-    return False
 
 
 def usage(s=None):
@@ -127,10 +92,10 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
             text=True,
             capture_output=True,
         )
-        if verify.returncode == SUCCESS and verify_web_password(password):
-            log.write("admin password and WebDAV login verified successfully")
+        if verify.returncode == SUCCESS:
+            log.write("admin password set and verified successfully")
             return (SUCCESS, "", [])
-        log.write("admin password or WebDAV verification failed after reset", "err")
+        log.write("admin password verification failed after reset", "err")
         return (
             ERR_VERIFY,
             "Nextcloud did not accept the new admin password after resetting it.",
