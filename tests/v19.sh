@@ -8,6 +8,9 @@ base=https://localhost
 curl_args=(-ksS --resolve localhost:443:127.0.0.1)
 mkdir -p "$work"
 
+diagnostic_state=/run/tkl-nextcloud-auth-state
+trap 'rm -f -- "$diagnostic_state"' EXIT
+
 systemctl --quiet is-active apache2.service mariadb.service redis-server.service
 grep -q '\[40nextcloud\] successfully completed' /var/log/inithooks.log
 curl "${curl_args[@]}" -f "$base/status.php" >"$work/status.json"
@@ -46,6 +49,40 @@ chmod 0600 "$work/curl-auth.conf"
 test "$(stat -c '%a' "$work/curl-auth.conf")" = 600
 unset escaped_auth
 auth_args=(--config "$work/curl-auth.conf")
+
+# Temporary acceptance trace: compare keyed fingerprints only. These booleans
+# distinguish post-firstboot mutation from a runtime credential mismatch.
+. "$diagnostic_state"
+fingerprint() {
+    openssl dgst -sha256 -mac HMAC -macopt "hexkey:$diagnostic_key" -r |
+        awk '{print $1}'
+}
+runtime_password_fingerprint=$(printf '%s' "$password" | fingerprint)
+runtime_password_matches_firstboot=false
+if test "$runtime_password_fingerprint" = \
+        "$firstboot_password_fingerprint"; then
+    runtime_password_matches_firstboot=true
+fi
+runtime_hash=$(
+    runuser -u www-data -- /usr/bin/php -r '
+define("OC_CONSOLE", 1);
+require_once "/var/www/nextcloud/lib/base.php";
+$user = \OCP\Server::get(\OCP\IUserManager::class)->get("admin");
+echo $user?->getPasswordHash() ?? "";
+'
+)
+runtime_hash_fingerprint=$(printf '%s' "$runtime_hash" | fingerprint)
+runtime_hash_matches_firstboot=false
+if test "$runtime_hash_fingerprint" = "$firstboot_hash_fingerprint"; then
+    runtime_hash_matches_firstboot=true
+fi
+printf 'runtime_password_matches_firstboot=%s\n' \
+    "$runtime_password_matches_firstboot"
+printf 'runtime_hash_matches_firstboot=%s\n' \
+    "$runtime_hash_matches_firstboot"
+unset diagnostic_key firstboot_password_fingerprint \
+    firstboot_hash_fingerprint runtime_password_fingerprint runtime_hash \
+    runtime_hash_fingerprint
 dav="$base/remote.php/dav/files/admin/qa-v19.txt"
 put_status=$(curl "${curl_args[@]}" "${auth_args[@]}" \
     -D "$work/put-headers.txt" -o "$work/put-body.txt" \
