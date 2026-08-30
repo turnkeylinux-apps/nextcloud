@@ -29,6 +29,7 @@ SUCCESS = 0
 ERR_PASSWORD = 1
 ERR_EXCEPTION = 2
 ERR_UNKNOWN = 3
+ERR_VERIFY = 4
 
 RAND_PWD_FILE = "/root/nextcloud_random_admin_password"
 
@@ -49,8 +50,12 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
             - ERR_PASSWORD
             - ERR_EXCEPTION
             - ERR_UNKNOWN
+            - ERR_VERIFY
     """
     local_env = os.environ.copy()
+    # Nextcloud 34 prefers NC_PASS over the legacy OC_PASS. Set both so an
+    # inherited NC_PASS can never silently override the requested password.
+    local_env["NC_PASS"] = password
     local_env["OC_PASS"] = password
     p = subprocess.run(
         args=[
@@ -66,8 +71,36 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
     )
     # Success :)
     if p.returncode == SUCCESS:
-        log.write("admin password set successfully")
-        return (SUCCESS, "", [])
+        # Do not trust the command exit status alone: verify the persisted
+        # password through Nextcloud's user backend before reporting success.
+        # The password is supplied on stdin, never in argv or the environment.
+        verify = subprocess.run(
+            args=[
+                "runuser",
+                "www-data",
+                "-s",
+                "/bin/bash",
+                "-c",
+                "/usr/bin/php -r 'define(\"OC_CONSOLE\", 1); "
+                "require_once \"/var/www/nextcloud/lib/base.php\"; "
+                "$password = rtrim(stream_get_contents(STDIN), \"\\r\\n\"); "
+                "exit(\\OCP\\Server::get(\\OCP\\IUserManager::class)"
+                "->checkPassword(\"admin\", $password) === false ? 1 : 0);'",
+            ],
+            input=f"{password}\n",
+            cwd="/var/www/nextcloud",
+            text=True,
+            capture_output=True,
+        )
+        if verify.returncode == SUCCESS:
+            log.write("admin password set and verified successfully")
+            return (SUCCESS, "", [])
+        log.write("admin password verification failed after reset", "err")
+        return (
+            ERR_VERIFY,
+            "Nextcloud did not accept the new admin password after resetting it.",
+            [],
+        )
 
     # password setting failure/error handling
     else:
