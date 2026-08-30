@@ -18,6 +18,17 @@ $CONFIG = array(
 );
 EOF
 
+# Check the exact configuration-fragment boundary separately from later
+# generic firstboot hooks. Keep the credential on stdin and fail closed.
+printf '%s\n' "$APP_PASS" | runuser -u www-data -- /usr/bin/php -r '
+define("OC_CONSOLE", 1);
+require_once "/var/www/nextcloud/lib/base.php";
+$password = rtrim(stream_get_contents(STDIN), "\r\n");
+exit(\OCP\Server::get(\OCP\IUserManager::class)
+    ->checkPassword("admin", $password) === false ? 1 : 0);
+'
+echo '[nextcloud-auth-check] credential accepted after read-only fragment'
+
 # Temporary acceptance trace: retain keyed fingerprints only, so the late
 # firstboot and runtime checkpoints can detect credential or hash mutation
 # without persisting or emitting either value.
