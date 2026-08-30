@@ -32,6 +32,12 @@ ERR_UNKNOWN = 3
 ERR_VERIFY = 4
 
 RAND_PWD_FILE = "/root/nextcloud_random_admin_password"
+READ_ONLY_CONF = "/var/www/nextcloud/config/turnkey-read-only.config.php"
+READ_ONLY_CONFIG = """<?php
+$CONFIG = array(
+    'config_is_read_only' => true,
+);
+"""
 
 
 def usage(s=None):
@@ -232,6 +238,26 @@ def main():
     conf = "/var/www/nextcloud/config/config.php"
     os.chown(conf, 0, grp.getgrnam("www-data").gr_gid)
     os.chmod(conf, 0o640)
+
+    # Establish the final merged configuration before setting the password.
+    # Nextcloud must generate and verify the credential under the same
+    # read-only configuration that Apache and later CLI processes load.
+    subprocess.run(
+        [
+            "/usr/bin/install",
+            "-o",
+            "root",
+            "-g",
+            "www-data",
+            "-m",
+            "0640",
+            "/dev/stdin",
+            READ_ONLY_CONF,
+        ],
+        input=READ_ONLY_CONFIG,
+        text=True,
+        check=True,
+    )
 
     random = (
         "Random",
