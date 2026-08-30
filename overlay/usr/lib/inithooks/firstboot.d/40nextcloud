@@ -4,5 +4,6 @@
 . /etc/default/inithooks
 
 [ -e $INITHOOKS_CONF ] && . $INITHOOKS_CONF
+systemctl start mariadb.service
 printf '%s\n' "$APP_PASS" | \
     $INITHOOKS_PATH/bin/nextcloud.py --pass-stdin --domain="$APP_DOMAIN"
