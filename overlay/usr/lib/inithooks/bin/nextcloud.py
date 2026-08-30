@@ -52,20 +52,29 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
             - ERR_UNKNOWN
             - ERR_VERIFY
     """
-    local_env = os.environ.copy()
-    # Nextcloud 34 prefers NC_PASS over the legacy OC_PASS. Set both so an
-    # inherited NC_PASS can never silently override the requested password.
-    local_env["NC_PASS"] = password
-    local_env["OC_PASS"] = password
+    # Feed the requested password directly to Nextcloud's user backend on
+    # stdin. Avoid the occ environment bridge here: the subsequent fresh PHP
+    # process must verify the same bytes that were supplied to setPassword().
+    setter = (
+        'define("OC_CONSOLE", 1); '
+        'require_once "/var/www/nextcloud/lib/base.php"; '
+        '$password = rtrim(stream_get_contents(STDIN), "\\r\\n"); '
+        '$user = \\OCP\\Server::get(\\OCP\\IUserManager::class)'
+        '->get("admin"); '
+        'exit($user !== null && $user->setPassword($password) ? 0 : 1);'
+    )
     p = subprocess.run(
         args=[
-            "/usr/local/bin/turnkey-occ",
-            "user:resetpassword",
-            "--password-from-env",
-            "admin",
+            "runuser",
+            "-u",
+            "www-data",
+            "--",
+            "/usr/bin/php",
+            "-r",
+            setter,
         ],
+        input=f"{password}\n",
         cwd="/var/www/nextcloud",
-        env=local_env,
         text=True,
         capture_output=True,
     )
