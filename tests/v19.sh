@@ -46,6 +46,64 @@ chmod 0600 "$work/curl-auth.conf"
 test "$(stat -c '%a' "$work/curl-auth.conf")" = 600
 unset escaped_auth
 auth_args=(--config "$work/curl-auth.conf")
+
+# Trace the exact web-runtime authentication path without emitting or
+# persisting the credential. This distinguishes a backend password failure
+# from a client-login policy failure and from Sabre's DAV integration.
+auth_trace=/var/www/nextcloud/tkl-v19-auth-trace.php
+install -o root -g www-data -m 0640 /dev/stdin "$auth_trace" <<'PHP'
+<?php
+header('Content-Type: application/json');
+require_once '/var/www/nextcloud/lib/base.php';
+
+$authorization = $_SERVER['HTTP_AUTHORIZATION']
+    ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+    ?? '';
+$decoded = '';
+if (str_starts_with($authorization, 'Basic ')) {
+    $decoded = base64_decode(substr($authorization, 6), true) ?: '';
+}
+[$username, $password] = array_pad(explode(':', $decoded, 2), 2, '');
+
+$request = \OCP\Server::get(\OCP\IRequest::class);
+$manager = \OCP\Server::get(\OCP\IUserManager::class);
+$session = \OCP\Server::get(\OC\User\Session::class);
+$throttler = \OCP\Server::get(\OCP\Security\Bruteforce\IThrottler::class);
+$clientAccepted = false;
+$clientException = null;
+try {
+    $clientAccepted = $session->logClientIn(
+        $username,
+        $password,
+        $request,
+        $throttler,
+    );
+} catch (Throwable $exception) {
+    $clientException = get_class($exception);
+}
+$backendAccepted = $manager->checkPassword('admin', $password) !== false;
+$user = $manager->get('admin');
+
+echo json_encode([
+    'basic_header_present' => str_starts_with($authorization, 'Basic '),
+    'decoded_username_is_admin' => hash_equals('admin', $username),
+    'php_auth_user_matches' => isset($_SERVER['PHP_AUTH_USER'])
+        && hash_equals($username, $_SERVER['PHP_AUTH_USER']),
+    'php_auth_password_matches' => isset($_SERVER['PHP_AUTH_PW'])
+        && hash_equals($password, $_SERVER['PHP_AUTH_PW']),
+    'backend_password_accepted_in_web_runtime' => $backendAccepted,
+    'client_login_accepted' => $clientAccepted,
+    'client_login_exception' => $clientException,
+    'session_logged_in' => $session->isLoggedIn(),
+    'session_user_is_admin' => $session->getUser()?->getUID() === 'admin',
+    'user_exists' => $user !== null,
+    'user_enabled' => $user?->isEnabled() ?? false,
+    'token_auth_enforced' => \OCP\Server::get(\OCP\IConfig::class)
+        ->getSystemValueBool('token_auth_enforced', false),
+    'php_sapi' => PHP_SAPI,
+    'php_version' => PHP_VERSION,
+], JSON_THROW_ON_ERROR);
+PHP
 dav="$base/remote.php/dav/files/admin/qa-v19.txt"
 put_status=$(curl "${curl_args[@]}" "${auth_args[@]}" \
     -D "$work/put-headers.txt" -o "$work/put-body.txt" \
@@ -60,6 +118,15 @@ case "$put_status" in
         echo '--- response body (first 16384 bytes) ---' >&2
         head -c 16384 "$work/put-body.txt" >&2
         echo >&2
+        echo '--- focused HTTP authentication trace ---' >&2
+        if curl "${curl_args[@]}" "${auth_args[@]}" -f \
+                "$base/tkl-v19-auth-trace.php" >"$work/auth-trace.json"; then
+            cat "$work/auth-trace.json" >&2
+            echo >&2
+        else
+            echo 'authentication trace endpoint failed' >&2
+        fi
+        rm -f -- "$auth_trace"
         echo '--- Nextcloud log (last 65536 bytes) ---' >&2
         tail -c 65536 /var/www/nextcloud-data/nextcloud.log >&2 || true
         echo >&2
@@ -71,6 +138,7 @@ case "$put_status" in
         exit 22
         ;;
 esac
+rm -f -- "$auth_trace"
 curl "${curl_args[@]}" "${auth_args[@]}" -f "$dav" >"$work/download.txt"
 cmp "$work/upload.txt" "$work/download.txt"
 
