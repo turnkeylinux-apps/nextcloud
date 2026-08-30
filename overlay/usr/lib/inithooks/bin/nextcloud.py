@@ -208,6 +208,31 @@ def main():
         elif opt == "--domain":
             domain = val
 
+    # Complete all config.php mutations before setting the administrator
+    # password. This keeps the final password verification authoritative for
+    # the exact configuration that Apache will load.
+    if not domain:
+        d = Dialog("TurnKey GNU/Linux - First boot configuration")
+        domain = d.get_input(
+            "Nextcloud Domain",
+            "Enter the domain to serve Nextcloud.",
+            DEFAULT_DOMAIN
+        )
+
+    if domain == "DEFAULT":
+        domain = DEFAULT_DOMAIN
+
+    inithooks_cache.write("APP_DOMAIN", domain)
+    occ_env = os.environ.copy()
+    occ_env["NC_USR"] = "root"
+    subprocess.run([
+        "/usr/local/bin/turnkey-occ", "config:system:set",
+        "trusted_domains", "1", f"--value={domain}"
+    ], env=occ_env, check=True)
+    conf = "/var/www/nextcloud/config/config.php"
+    os.chown(conf, 0, grp.getgrnam("www-data").gr_gid)
+    os.chmod(conf, 0o640)
+
     random = (
         "Random",
         f" - Set random admin password; will be saved to {RAND_PWD_FILE}"
@@ -292,30 +317,6 @@ def main():
                 log.write("admin password not set due to Nextcloud error/s"
                           " - resolve problem and set manually",
                           "err")
-
-    if not domain:
-        if "d" not in locals():
-            d = Dialog("TurnKey GNU/Linux - First boot configuration")
-
-        domain = d.get_input(
-            "Nextcloud Domain",
-            "Enter the domain to serve Nextcloud.",
-            DEFAULT_DOMAIN
-        )
-
-    if domain == "DEFAULT":
-        domain = DEFAULT_DOMAIN
-
-    inithooks_cache.write("APP_DOMAIN", domain)
-    occ_env = os.environ.copy()
-    occ_env["NC_USR"] = "root"
-    subprocess.run([
-        "/usr/local/bin/turnkey-occ", "config:system:set",
-        "trusted_domains", "1", f"--value={domain}"
-    ], env=occ_env, check=True)
-    conf = "/var/www/nextcloud/config/config.php"
-    os.chown(conf, 0, grp.getgrnam("www-data").gr_gid)
-    os.chmod(conf, 0o640)
 
     sys.exit(hook_exit_code)
 
