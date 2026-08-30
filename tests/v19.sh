@@ -8,9 +8,20 @@ base=https://www.example.com
 curl_args=(-kfsS --resolve www.example.com:443:127.0.0.1)
 mkdir -p "$work"
 
+curl_ready() {
+    local attempt
+    for attempt in {1..30}; do
+        if curl "${curl_args[@]}" "$@"; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
 systemctl --quiet is-active apache2.service mariadb.service redis-server.service
 grep -q '\[40nextcloud\] successfully completed' /var/log/inithooks.log
-curl "${curl_args[@]}" "$base/status.php" >"$work/status.json"
+curl_ready "$base/status.php" >"$work/status.json"
 python3 -c '
 import json, sys
 status = json.load(open(sys.argv[1]))
@@ -40,7 +51,7 @@ if runuser -u www-data -- /usr/local/sbin/turnkey-nextcloud-update; then
 fi
 
 systemctl restart mariadb.service redis-server.service apache2.service
-curl "${curl_args[@]}" --netrc-file "$work/netrc" "$dav" >"$work/after-restart.txt"
+curl_ready --netrc-file "$work/netrc" "$dav" >"$work/after-restart.txt"
 cmp "$work/upload.txt" "$work/after-restart.txt"
 curl "${curl_args[@]}" --netrc-file "$work/netrc" -X DELETE "$dav"
 ! grep -F -- "$password" /var/log/inithooks.log
