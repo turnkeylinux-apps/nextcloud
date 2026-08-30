@@ -17,3 +17,8 @@ $CONFIG = array(
     'config_is_read_only' => true,
 );
 EOF
+
+# Apache may have loaded Nextcloud's configuration before firstboot regenerated
+# its password salt and secret. Reload only after the read-only fragment exists
+# so new workers see both the regenerated credentials and the protected config.
+systemctl reload apache2.service
