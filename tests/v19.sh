@@ -20,10 +20,12 @@ assert status["version"].startswith("34.0.0")
 
 readonly_conf=/var/www/nextcloud/config/turnkey-read-only.config.php
 assert_config_read_only() {
-    case "$(turnkey-occ config:system:get config_is_read_only)" in
-        true|1) ;;
-        *) echo 'Nextcloud read-only configuration is not effective' >&2; return 1 ;;
-    esac
+    turnkey-occ config:list system --output=json >"$work/system-config.json"
+    python3 -c '
+import json, sys
+config = json.load(open(sys.argv[1]))
+assert config["system"]["config_is_read_only"] is True
+' "$work/system-config.json"
 }
 assert_config_read_only
 test "$(stat -c '%U:%G:%a' "$readonly_conf")" = root:www-data:640
