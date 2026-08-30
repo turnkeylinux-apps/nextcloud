@@ -57,6 +57,7 @@ turnkey-occ db:add-missing-indices
 turnkey-occ theming:config slogan "Powered by TurnKey Linux"
 turnkey-occ theming:config url https://www.turnkeylinux.org/nextcloud
 turnkey-occ theming:config name "NextCloud Appliance"
+turnkey-occ maintenance:mode --off
 
 # adjust nextcloud config for redis
 sed -i '/^);/d' $CONF
