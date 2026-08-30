@@ -58,20 +58,30 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
             - ERR_UNKNOWN
             - ERR_VERIFY
     """
-    local_env = os.environ.copy()
-    # Nextcloud 34 prefers NC_PASS over the legacy OC_PASS. Set both so an
-    # inherited NC_PASS can never silently override the requested password.
-    local_env["NC_PASS"] = password
-    local_env["OC_PASS"] = password
+    # Feed the requested password directly to Nextcloud's user backend on
+    # stdin. The occ console cannot run as www-data after config.php becomes
+    # root-owned, while the backend API preserves Nextcloud password policy
+    # and password-updated events without weakening the ownership boundary.
+    setter = (
+        'define("OC_CONSOLE", 1); '
+        'require_once "/var/www/nextcloud/lib/base.php"; '
+        '$password = rtrim(stream_get_contents(STDIN), "\\r\\n"); '
+        '$user = \\OCP\\Server::get(\\OCP\\IUserManager::class)'
+        '->get("admin"); '
+        'exit($user !== null && $user->setPassword($password) ? 0 : 1);'
+    )
     p = subprocess.run(
         args=[
-            "/usr/local/bin/turnkey-occ",
-            "user:resetpassword",
-            "--password-from-env",
-            "admin",
+            "runuser",
+            "-u",
+            "www-data",
+            "--",
+            "/usr/bin/php",
+            "-r",
+            setter,
         ],
+        input=f"{password}\n",
         cwd="/var/www/nextcloud",
-        env=local_env,
         text=True,
         capture_output=True,
     )
@@ -110,26 +120,25 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
 
     # password setting failure/error handling
     else:
-        # occ seems to only output to stdout - even if stacktrace
-        # but just in case that changes
-        occ_output = p.stdout + p.stderr
+        # Preserve backend output for existing error classification and the
+        # inithook log without exposing the stdin-only password.
+        backend_output = p.stdout + p.stderr
         services = []
-        # log raw occ output - including full stacktrace if relevant
-        log.write(occ_output, "err")
+        log.write(backend_output, "err")
 
         # password complexity failure
-        if "password" in occ_output.lower():
+        if "password" in backend_output.lower():
             error_code = ERR_PASSWORD
-            msg = occ_output.rstrip()
+            msg = backend_output.rstrip()
 
         # nextcloud exception
-        elif "exception" in occ_output.lower():
+        elif "exception" in backend_output.lower():
             error_code = ERR_EXCEPTION
             msg = "Nextcloud exception:"
 
-            if "redis" in occ_output.lower():
+            if "redis" in backend_output.lower():
                 services.append("Redis")
-            if "database" in occ_output.lower():
+            if "database" in backend_output.lower():
                 services.append("MariaDB")
             if services:
                 msg = f"{msg} Can't connect to service(s)"
