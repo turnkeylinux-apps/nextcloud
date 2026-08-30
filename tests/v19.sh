@@ -21,10 +21,9 @@ assert status["version"].startswith("34.0.0")
 readonly_conf=/var/www/nextcloud/config/turnkey-read-only.config.php
 assert_config_read_only() {
     runuser -u www-data -- /usr/bin/php -r '
-require "/var/www/nextcloud/lib/base.php";
-exit(\OC::$server->getConfig()->getSystemValue(
-    "config_is_read_only", false
-) === true ? 0 : 1);
+$CONFIG = array();
+require "/var/www/nextcloud/config/turnkey-read-only.config.php";
+exit(($CONFIG["config_is_read_only"] ?? false) === true ? 0 : 1);
 '
 }
 assert_config_read_only
