@@ -29,7 +29,7 @@ exit(($CONFIG["config_is_read_only"] ?? false) === true ? 0 : 1);
 assert_config_read_only
 test "$(stat -c '%U:%G:%a' "$readonly_conf")" = root:www-data:640
 runuser -u www-data -- test ! -w /var/www/nextcloud/index.php
-runuser -u www-data -- test ! -w /var/www/nextcloud/config/config.php
+test "$(stat -c '%U:%G:%a' /var/www/nextcloud/config/config.php)" = www-data:www-data:640
 runuser -u www-data -- test ! -w "$readonly_conf"
 runuser -u www-data -- touch /var/www/nextcloud-data/.tkl-v19-write-test
 runuser -u www-data -- rm /var/www/nextcloud-data/.tkl-v19-write-test
@@ -75,6 +75,18 @@ curl "${curl_args[@]}" "${auth_args[@]}" -f "$dav" >"$work/download.txt"
 cmp "$work/upload.txt" "$work/download.txt"
 
 turnkey-occ integrity:check-core
+assert_scheduled_jobs() {
+    # Invoke the actual cron entry point as its configured user; the occ
+    # wrapper can otherwise conceal a mismatched config owner.
+    grep -Eq '^[^#].*www-data.*php.*nextcloud/cron.php' /etc/cron.d/nextcloud
+    before=$(date +%s)
+    runuser -u www-data -- /usr/bin/php -f /var/www/nextcloud/cron.php
+    last=$(turnkey-occ config:app:get core lastcron)
+    test "$last" -ge "$before"
+    runuser -u www-data -- /usr/bin/php /var/www/nextcloud/occ status
+    assert_config_read_only
+}
+assert_scheduled_jobs
 # Exercise the same atomic read-only toggle used by the privileged updater
 # without contacting the update service or changing the installed version.
 source /usr/local/sbin/turnkey-nextcloud-update
@@ -83,8 +95,9 @@ disable_read_only_config
 test ! -e "$READ_ONLY_CONF"
 test "$(stat -c '%U:%G:%a' "$READ_ONLY_CONF_DISABLED")" = \
     root:www-data:640
-restore_read_only_config
+restore_permissions
 trap - EXIT
+assert_scheduled_jobs
 test ! -e "$READ_ONLY_CONF_DISABLED"
 test "$(stat -c '%U:%G:%a' "$readonly_conf")" = root:www-data:640
 assert_config_read_only

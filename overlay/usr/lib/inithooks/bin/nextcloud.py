@@ -12,6 +12,7 @@ Option:
 import sys
 import getopt
 import grp
+import pwd
 import subprocess
 import os
 import string
@@ -59,9 +60,8 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
             - ERR_VERIFY
     """
     # Feed the requested password directly to Nextcloud's user backend on
-    # stdin. The occ console cannot run as www-data after config.php becomes
-    # root-owned, while the backend API preserves Nextcloud password policy
-    # and password-updated events without weakening the ownership boundary.
+    # stdin. The backend API preserves Nextcloud password policy and
+    # password-updated events under the final read-only configuration.
     setter = (
         'define("OC_CONSOLE", 1); '
         'require_once "/var/www/nextcloud/lib/base.php"; '
@@ -238,15 +238,32 @@ def main():
         domain = DEFAULT_DOMAIN
 
     inithooks_cache.write("APP_DOMAIN", domain)
-    occ_env = os.environ.copy()
-    occ_env["NC_USR"] = "root"
-    subprocess.run([
-        "/usr/local/bin/turnkey-occ", "config:system:set",
-        "trusted_domains", "1", f"--value={domain}"
-    ], env=occ_env, check=True)
     conf = "/var/www/nextcloud/config/config.php"
-    os.chown(conf, 0, grp.getgrnam("www-data").gr_gid)
-    os.chmod(conf, 0o640)
+    web_uid = pwd.getpwnam("www-data").pw_uid
+    web_gid = grp.getgrnam("www-data").gr_gid
+    disabled = "/var/www/.turnkey-nextcloud-read-only.config.php.disabled"
+    if os.path.exists(disabled):
+        raise RuntimeError("Nextcloud configuration is already unlocked for maintenance")
+    locked = os.path.exists(READ_ONLY_CONF)
+    if locked:
+        os.rename(READ_ONLY_CONF, disabled)
+    try:
+        # Keep the configuration directory root-owned. Privileged setup
+        # temporarily owns config.php to change the requested domain, then
+        # restores the HTTP user's ownership required by console and cron.
+        os.chown(conf, 0, web_gid)
+        os.chmod(conf, 0o640)
+        occ_env = os.environ.copy()
+        occ_env["NC_USR"] = "root"
+        subprocess.run([
+            "/usr/local/bin/turnkey-occ", "config:system:set",
+            "trusted_domains", "1", f"--value={domain}"
+        ], env=occ_env, check=True)
+    finally:
+        os.chown(conf, web_uid, web_gid)
+        os.chmod(conf, 0o640)
+        if locked:
+            os.rename(disabled, READ_ONLY_CONF)
 
     # Establish the final merged configuration before setting the password.
     # Nextcloud must generate and verify the credential under the same

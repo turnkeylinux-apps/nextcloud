@@ -26,7 +26,8 @@ restore_permissions() {
     find "$WEBROOT" -type f -exec chmod 0644 {} +
     install -d -o www-data -g www-data -m 0755 "$WEBROOT/custom_apps"
     chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
-    chown root:www-data "$CONF" "$READ_ONLY_CONF"
+    chown www-data:www-data "$CONF"
+    chown root:www-data "$READ_ONLY_CONF"
     chmod 0640 "$CONF" "$READ_ONLY_CONF"
 }
 

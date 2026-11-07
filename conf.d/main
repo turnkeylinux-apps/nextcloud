@@ -94,13 +94,14 @@ usermod -a -G redis www-data
 sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/redis.conf
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
 
-# Root owns Nextcloud core, bundled apps, and configuration. The web service
-# retains only data and the explicit custom-app management boundary.
+# Root owns Nextcloud core and bundled apps. The config owner must match
+# the HTTP user for console and cron; firstboot installs a root-owned
+# read-only policy fragment. Data and custom apps remain web-writable.
 chown -R root:root "$WEBROOT"
 find "$WEBROOT" -type d -exec chmod 0755 {} +
 find "$WEBROOT" -type f -exec chmod 0644 {} +
 chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
-chown root:www-data "$CONF"
+chown www-data:www-data "$CONF"
 chmod 0640 "$CONF"
 
 # stop services

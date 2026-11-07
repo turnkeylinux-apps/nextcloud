@@ -17,7 +17,10 @@ and on top of that:
    - Includes occ_ script for command line administration and configuration.
      Also includes turnkey-occ_ wrapper script (runs occ as www-data user).
 
-     Nextcloud core and bundled apps are root-owned. Custom apps remain an
+     Nextcloud core and bundled apps are root-owned. Configuration belongs
+     to the web user so scheduled jobs and console commands can run. A
+     root-owned configuration fragment keeps application settings read-only
+     outside supervised setup and updates. Custom apps remain an
      explicit web-writable executable-code boundary so the app store works;
      install only apps and updates you trust.
 
