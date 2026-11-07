@@ -43,6 +43,12 @@ Credentials *(passwords set at first boot)*
 -  Adminer: username **adminer**
 -  Nextcloud: username **admin**
 
+First boot also requests the Nextcloud administrator's recovery email address.
+Unattended initial setup requires ``APP_EMAIL`` alongside ``APP_PASS`` and
+``APP_DOMAIN``. Re-running setup preserves the existing address unless a new
+one is supplied. Configure supported outgoing mail or an SMTP relay in Nextcloud
+and verify delivery before relying on password recovery.
+
 
 .. _Nextcloud: https://nextcloud.com/
 .. _TurnKey Core: https://www.turnkeylinux.org/core

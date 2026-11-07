@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Set Nextcloud admin password and domain to serve
+"""Set Nextcloud admin password, recovery email and domain to serve
 
 Option:
     --pass=     unless provided, will ask interactively
@@ -7,10 +7,13 @@ Option:
                 read the password from standard input
     --domain=   unless provided, will ask interactively
                 DEFAULT=www.example.com
+    --email=    admin recovery address; an existing address is preserved
+                when omitted. Required for a new unattended installation.
 """
 
 import sys
 import getopt
+import json
 import grp
 import pwd
 import subprocess
@@ -18,7 +21,7 @@ import os
 import string
 import secrets
 
-from libinithooks.dialog_wrapper import Dialog
+from libinithooks.dialog_wrapper import Dialog, EMAIL_RE
 from libinithooks.inithooks_log import InitLog
 from libinithooks import inithooks_cache
 
@@ -47,6 +50,31 @@ def usage(s=None):
     print("Syntax: %s [options]" % sys.argv[0], file=sys.stderr)
     print(__doc__, file=sys.stderr)
     sys.exit(1)
+
+
+def get_admin_email() -> str:
+    result = subprocess.run(
+        ["/usr/local/bin/turnkey-occ", "user:info", "admin", "--output=json"],
+        check=True, capture_output=True, text=True,
+    )
+    email = json.loads(result.stdout)["email"]
+    if email is None:
+        return ""
+    if not isinstance(email, str):
+        raise RuntimeError("Nextcloud returned an invalid admin email value")
+    return email.strip().lower()
+
+
+def set_admin_email(email: str):
+    subprocess.run(
+        ["/usr/local/bin/turnkey-occ", "user:setting", "admin", "settings",
+         "email", f"--value={email}"],
+        check=True, capture_output=True, text=True,
+    )
+    applied = get_admin_email()
+    if applied != email:
+        raise RuntimeError("Nextcloud admin recovery email verification failed")
+    inithooks_cache.write("APP_EMAIL", applied)
 
 
 def set_password(password: str) -> tuple[int, str, list[str]]:
@@ -207,12 +235,13 @@ def main():
     opts = []
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help",
-                                       "pass=", "pass-stdin", "domain="])
+                                       "pass=", "pass-stdin", "domain=", "email="])
     except getopt.GetoptError as e:
         usage(e)
 
     password = ""
     domain = ""
+    email = ""
     for opt, val in opts:
         if opt in ("-h", "--help"):
             usage()
@@ -222,6 +251,25 @@ def main():
             password = sys.stdin.readline().rstrip("\r\n")
         elif opt == "--domain":
             domain = val
+        elif opt == "--email":
+            email = val.strip().lower()
+
+    if not email and not get_admin_email():
+        # Existing unattended preseeds supplied password and domain only.
+        # Do not turn those into a new interactive prompt or invent an owner.
+        if password and domain:
+            usage("APP_EMAIL/--email is required for initial unattended setup")
+        d = Dialog("TurnKey GNU/Linux - First boot configuration")
+        email = d.get_email(
+            "Nextcloud Recovery Email",
+            "Enter the recovery email for the Nextcloud 'admin' account. "
+            "Configure outgoing mail to receive password reset messages.",
+        )
+        email = (email or "").strip().lower()
+        if not email:
+            usage("admin recovery email is required")
+    if email and not EMAIL_RE.match(email):
+        usage("admin recovery email is not valid")
 
     # Complete all config.php mutations before setting the administrator
     # password. This keeps the final password verification authoritative for
@@ -369,6 +417,11 @@ def main():
                 log.write("admin password not set due to Nextcloud error/s"
                           " - resolve problem and set manually",
                           "err")
+
+    if hook_exit_code == 0 and email:
+        # Set this after the password to avoid a reset notification to a new
+        # address before the initial credential has been established.
+        set_admin_email(email)
 
     sys.exit(hook_exit_code)
 
