@@ -15,7 +15,7 @@ python3 -c '
 import json, sys
 status = json.load(open(sys.argv[1]))
 assert status["installed"] is True
-assert status["version"].startswith("34.0.0")
+assert status["version"].startswith("34.0.5")
 ' "$work/status.json"
 
 readonly_conf=/var/www/nextcloud/config/turnkey-read-only.config.php
@@ -113,11 +113,11 @@ curl "${curl_args[@]}" "${auth_args[@]}" -f -X DELETE "$dav"
 ! grep -F -- "$password" /var/log/inithooks.log
 
 cat >"$result" <<EOF
-package_source=official Nextcloud 34.0.0 release ZIP pinned by SHA-256
-installed_version=34.0.0
-runtime_checks=Apache, MariaDB and Redis services, firstboot completion, read-only merged configuration and updater toggle, status endpoint, authenticated WebDAV write/read/delete across restart, core integrity, ownership boundaries, password log hygiene
+package_source=official Nextcloud 34.0.5 release ZIP pinned by SHA-256
+installed_version=34.0.5
+runtime_checks=Apache, MariaDB and Redis services, firstboot completion, read-only merged configuration and updater toggle, status endpoint, authenticated WebDAV write/read/delete across restart, core integrity, ownership boundaries, configured www-data cron and direct occ execution with persisted lastcron before and after updater permission restoration, password log hygiene
 updater_command=turnkey-nextcloud-update as root
 updater_result=root-only command present; non-root use fails closed; atomic read-only fragment disable and restore validated without changing the installed version
 updater_channel=official Nextcloud stable releases
-integrity_evidence=release ZIP pinned to e6e0f29026abb8373e12e4c1cdb1ac4d0405faacbdbdf9b86263de06daeaae57 and turnkey-occ integrity check
+integrity_evidence=release ZIP pinned to d077fdca3dc78ef60b5bbc51182f2a1737aa01e2044d6c23f4e7b72146f5239a and turnkey-occ integrity check
 EOF

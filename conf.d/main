@@ -9,7 +9,7 @@ ADMIN_PASS=$(mcookie)
 WEBROOT=/var/www/nextcloud
 DATAROOT=${WEBROOT}-data
 CONF=$WEBROOT/config/config.php
-VER=34.0.0
+VER=34.0.5
 ARCHIVE=/usr/local/src/nextcloud-${VER}.zip
 
 # unpack tarball to webroot and set permissions

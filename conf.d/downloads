@@ -1,7 +1,7 @@
 #!/bin/bash -eux
 
-VER=34.0.0
-SHA256=e6e0f29026abb8373e12e4c1cdb1ac4d0405faacbdbdf9b86263de06daeaae57
+VER=34.0.5
+SHA256=d077fdca3dc78ef60b5bbc51182f2a1737aa01e2044d6c23f4e7b72146f5239a
 
 dl() {
     local proxy_args=()
