@@ -10,7 +10,6 @@ php-intl
 php-xml
 php-mbstring
 php-zip
-php8.5-dom
 php-pear
 php-imagick
 libmagickcore-7.q16-10-extra
