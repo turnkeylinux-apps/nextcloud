@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
@@ -70,11 +71,10 @@ class RecoveryEmailTests(unittest.TestCase):
             patch.object(sys, "stdin", io.StringIO(stdin)),
             patch.object(sys, "stderr", io.StringIO()) as errors,
             patch.object(self.hook.subprocess, "run", side_effect=self.run_command),
-            patch.object(self.hook.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=33)),
-            patch.object(self.hook.grp, "getgrnam", return_value=SimpleNamespace(gr_gid=33)),
             patch.object(self.hook.os.path, "exists", return_value=False),
             patch.object(self.hook.os, "chown"),
             patch.object(self.hook.os, "chmod"),
+            patch.object(self.hook, "remove_legacy_read_only_config"),
             patch.object(self.hook, "set_password", side_effect=self.password),
         ):
             with self.assertRaises(SystemExit) as raised:
@@ -108,7 +108,7 @@ class RecoveryEmailTests(unittest.TestCase):
                 self.assertIn("APP_EMAIL/--email is required", error)
         self.assertFalse(self.events)
         self.cache.write.assert_not_called()
-        self.assertTrue(all("user:info" in args for args in self.calls))
+        self.assertTrue(all("user:info" in args or args == ["/usr/local/sbin/turnkey-nextcloud-config-permissions"] for args in self.calls))
         self.hook.Dialog.assert_not_called()
 
     def test_omitted_email_preserves_actual_user_setting(self):
@@ -134,6 +134,13 @@ class RecoveryEmailTests(unittest.TestCase):
         self.assertFalse(self.calls)
         self.cache.write.assert_not_called()
 
+    def test_legacy_permission_migration_precedes_service_user_inspection(self):
+        self.email = "existing@example.org"
+        code, _ = self.run_main(["--pass=new-password", "--domain=DEFAULT"])
+        self.assertEqual(code, 0)
+        self.assertEqual(self.calls[0], ["/usr/local/sbin/turnkey-nextcloud-config-permissions"])
+        self.assertIn("user:info", self.calls[1])
+
     def test_failed_password_does_not_change_email(self):
         self.password = MagicMock(return_value=(self.hook.ERR_UNKNOWN, "failure", []))
         code, _ = self.run_main(["--pass=new-password", "--domain=DEFAULT", "--email=owner@example.org"])
@@ -152,6 +159,48 @@ class RecoveryEmailTests(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 self.hook.set_admin_email("owner@example.org")
         self.cache.write.assert_not_called()
+
+    def test_only_exact_legacy_policy_is_removed(self):
+        for content, removed in [
+            (self.hook.LEGACY_READ_ONLY_CONFIG, True),
+            (self.hook.LEGACY_READ_ONLY_CONFIG + "// owner policy\n", False),
+            (self.hook.LEGACY_READ_ONLY_CONFIG.replace("\n", "\r\n"), False),
+        ]:
+            with self.subTest(removed=removed), tempfile.TemporaryDirectory() as directory:
+                active = Path(directory) / "active.php"
+                parked = Path(directory) / "parked.php"
+                active.write_text(content)
+                parked.write_text(content)
+                with (
+                    patch.object(self.hook, "LEGACY_READ_ONLY_CONF", str(active)),
+                    patch.object(self.hook, "LEGACY_READ_ONLY_DISABLED", str(parked)),
+                ):
+                    self.hook.remove_legacy_read_only_config()
+                self.assertEqual(active.exists(), not removed)
+                self.assertEqual(parked.exists(), not removed)
+                if not removed:
+                    self.assertEqual(active.read_bytes(), content.encode())
+                    self.assertEqual(parked.read_bytes(), content.encode())
+
+    def test_updater_removes_only_exact_legacy_policy(self):
+        updater = HOOK.parents[3] / "local/sbin/turnkey-nextcloud-update"
+        for content, removed in [
+            (self.hook.LEGACY_READ_ONLY_CONFIG, True),
+            (self.hook.LEGACY_READ_ONLY_CONFIG + "// owner policy\n", False),
+        ]:
+            with self.subTest(removed=removed), tempfile.TemporaryDirectory() as directory:
+                config = Path(directory) / "config"
+                config.mkdir()
+                active = config / "turnkey-read-only.config.php"
+                parked = Path(directory) / "parked.php"
+                active.write_text(content)
+                parked.write_text(content)
+                subprocess.run(
+                    ["bash", "-c", 'source "$1"; WEBROOT="$2"; LEGACY_READ_ONLY_DISABLED="$3"; remove_legacy_read_only_config',
+                     "test", str(updater), directory, str(parked)], check=True,
+                )
+                self.assertEqual(active.exists(), not removed)
+                self.assertEqual(parked.exists(), not removed)
 
 
 if __name__ == "__main__":

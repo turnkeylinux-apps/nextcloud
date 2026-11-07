@@ -14,8 +14,6 @@ Option:
 import sys
 import getopt
 import json
-import grp
-import pwd
 import subprocess
 import os
 import string
@@ -36,8 +34,9 @@ ERR_UNKNOWN = 3
 ERR_VERIFY = 4
 
 RAND_PWD_FILE = "/root/nextcloud_random_admin_password"
-READ_ONLY_CONF = "/var/www/nextcloud/config/turnkey-read-only.config.php"
-READ_ONLY_CONFIG = """<?php
+LEGACY_READ_ONLY_CONF = "/var/www/nextcloud/config/turnkey-read-only.config.php"
+LEGACY_READ_ONLY_DISABLED = "/var/www/.turnkey-nextcloud-read-only.config.php.disabled"
+LEGACY_READ_ONLY_CONFIG = """<?php
 $CONFIG = array(
     'config_is_read_only' => true,
 );
@@ -50,6 +49,18 @@ def usage(s=None):
     print("Syntax: %s [options]" % sys.argv[0], file=sys.stderr)
     print(__doc__, file=sys.stderr)
     sys.exit(1)
+
+
+def remove_legacy_read_only_config():
+    """Remove only the exact policy formerly installed by this appliance."""
+    for path in (LEGACY_READ_ONLY_CONF, LEGACY_READ_ONLY_DISABLED):
+        try:
+            with open(path, "rb") as source:
+                content = source.read()
+        except FileNotFoundError:
+            continue
+        if content == LEGACY_READ_ONLY_CONFIG.encode():
+            os.unlink(path)
 
 
 def get_admin_email() -> str:
@@ -89,7 +100,7 @@ def set_password(password: str) -> tuple[int, str, list[str]]:
     """
     # Feed the requested password directly to Nextcloud's user backend on
     # stdin. The backend API preserves Nextcloud password policy and
-    # password-updated events under the final read-only configuration.
+    # password-updated events under the final application configuration.
     setter = (
         'define("OC_CONSOLE", 1); '
         'require_once "/var/www/nextcloud/lib/base.php"; '
@@ -254,6 +265,12 @@ def main():
         elif opt == "--email":
             email = val.strip().lower()
 
+    if email and not EMAIL_RE.match(email):
+        usage("admin recovery email is not valid")
+    # Older appliance configurations can be root-owned. Restore the supported
+    # service-user access before inspecting them, without running app PHP as root.
+    subprocess.run(["/usr/local/sbin/turnkey-nextcloud-config-permissions"], check=True)
+    remove_legacy_read_only_config()
     if not email and not get_admin_email():
         # Existing unattended preseeds supplied password and domain only.
         # Do not turn those into a new interactive prompt or invent an owner.
@@ -285,53 +302,11 @@ def main():
     if domain == "DEFAULT":
         domain = DEFAULT_DOMAIN
 
+    subprocess.run([
+        "/usr/local/bin/turnkey-occ", "config:system:set",
+        "trusted_domains", "1", f"--value={domain}"
+    ], check=True)
     inithooks_cache.write("APP_DOMAIN", domain)
-    conf = "/var/www/nextcloud/config/config.php"
-    web_uid = pwd.getpwnam("www-data").pw_uid
-    web_gid = grp.getgrnam("www-data").gr_gid
-    disabled = "/var/www/.turnkey-nextcloud-read-only.config.php.disabled"
-    if os.path.exists(disabled):
-        raise RuntimeError("Nextcloud configuration is already unlocked for maintenance")
-    locked = os.path.exists(READ_ONLY_CONF)
-    if locked:
-        os.rename(READ_ONLY_CONF, disabled)
-    try:
-        # Keep the configuration directory root-owned. Privileged setup
-        # temporarily owns config.php to change the requested domain, then
-        # restores the HTTP user's ownership required by console and cron.
-        os.chown(conf, 0, web_gid)
-        os.chmod(conf, 0o640)
-        occ_env = os.environ.copy()
-        occ_env["NC_USR"] = "root"
-        subprocess.run([
-            "/usr/local/bin/turnkey-occ", "config:system:set",
-            "trusted_domains", "1", f"--value={domain}"
-        ], env=occ_env, check=True)
-    finally:
-        os.chown(conf, web_uid, web_gid)
-        os.chmod(conf, 0o640)
-        if locked:
-            os.rename(disabled, READ_ONLY_CONF)
-
-    # Establish the final merged configuration before setting the password.
-    # Nextcloud must generate and verify the credential under the same
-    # read-only configuration that Apache and later CLI processes load.
-    subprocess.run(
-        [
-            "/usr/bin/install",
-            "-o",
-            "root",
-            "-g",
-            "www-data",
-            "-m",
-            "0640",
-            "/dev/stdin",
-            READ_ONLY_CONF,
-        ],
-        input=READ_ONLY_CONFIG,
-        text=True,
-        check=True,
-    )
 
     random = (
         "Random",

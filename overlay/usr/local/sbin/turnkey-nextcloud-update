@@ -3,32 +3,33 @@ set -euo pipefail
 
 WEBROOT=/var/www/nextcloud
 DATAROOT=/var/www/nextcloud-data
-CONF=$WEBROOT/config/config.php
-READ_ONLY_CONF=$WEBROOT/config/turnkey-read-only.config.php
-READ_ONLY_CONF_DISABLED=/var/www/.turnkey-nextcloud-read-only.config.php.disabled
-
-disable_read_only_config() {
-    test -f "$READ_ONLY_CONF"
-    test ! -e "$READ_ONLY_CONF_DISABLED"
-    mv -- "$READ_ONLY_CONF" "$READ_ONLY_CONF_DISABLED"
-}
-
-restore_read_only_config() {
-    if test -e "$READ_ONLY_CONF_DISABLED"; then
-        mv -f -- "$READ_ONLY_CONF_DISABLED" "$READ_ONLY_CONF"
-    fi
+LEGACY_READ_ONLY_DISABLED=/var/www/.turnkey-nextcloud-read-only.config.php.disabled
+remove_legacy_read_only_config() {
+    local path
+    for path in "$WEBROOT/config/turnkey-read-only.config.php" \
+        "$LEGACY_READ_ONLY_DISABLED"; do
+        if test -f "$path" && cmp -s "$path" <(cat <<'PHP'
+<?php
+$CONFIG = array(
+    'config_is_read_only' => true,
+);
+PHP
+        ); then
+            rm -- "$path"
+        fi
+    done
 }
 
 restore_permissions() {
-    restore_read_only_config
-    chown -R root:root "$WEBROOT"
-    find "$WEBROOT" -type d -exec chmod 0755 {} +
-    find "$WEBROOT" -type f -exec chmod 0644 {} +
-    install -d -o www-data -g www-data -m 0755 "$WEBROOT/custom_apps"
-    chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
-    chown www-data:www-data "$CONF"
-    chown root:www-data "$READ_ONLY_CONF"
-    chmod 0640 "$CONF" "$READ_ONLY_CONF"
+    /usr/local/sbin/turnkey-nextcloud-config-permissions
+    find -P "$WEBROOT" \( -path "$WEBROOT/config" -o -path "$WEBROOT/custom_apps" \) -prune -o \
+        -exec chown -h root:root {} +
+    find -P "$WEBROOT" \( -path "$WEBROOT/config" -o -path "$WEBROOT/custom_apps" \) -prune -o \
+        -type d -exec chmod 0755 {} +
+    find -P "$WEBROOT" \( -path "$WEBROOT/config" -o -path "$WEBROOT/custom_apps" \) -prune -o \
+        -type f -exec chmod 0644 {} +
+    chown -hR www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
+    /usr/local/sbin/turnkey-nextcloud-config-permissions
 }
 
 main() {
@@ -38,8 +39,10 @@ main() {
     }
 
     trap restore_permissions EXIT
-    disable_read_only_config
-    chown -R www-data:www-data "$WEBROOT"
+    /usr/local/sbin/turnkey-nextcloud-config-permissions
+    remove_legacy_read_only_config
+    find -P "$WEBROOT" -path "$WEBROOT/config" -prune -o \
+        -exec chown -h www-data:www-data {} +
     runuser www-data -s /bin/bash -c \
         "/usr/bin/php '$WEBROOT/updater/updater.phar' --no-interaction"
     runuser www-data -s /bin/bash -c \

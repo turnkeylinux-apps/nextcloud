@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+"""Restore Nextcloud's writable configuration without following boundary links."""
+
+from contextlib import ExitStack
+import grp
+import os
+import pwd
+import stat
+
+
+def restore_permissions(webroot="/var/www/nextcloud"):
+    uid = pwd.getpwnam("www-data").pw_uid
+    gid = grp.getgrnam("www-data").gr_gid
+    with ExitStack() as stack:
+        def opened(path, flags, dir_fd=None):
+            descriptor = os.open(path, flags | os.O_NOFOLLOW, dir_fd=dir_fd)
+            stack.callback(os.close, descriptor)
+            return descriptor
+
+        root = opened(webroot, os.O_RDONLY | os.O_DIRECTORY)
+        config = opened("config", os.O_RDONLY | os.O_DIRECTORY, root)
+        apps = opened("custom_apps", os.O_RDONLY | os.O_DIRECTORY, root)
+        config_file = opened("config.php", os.O_RDONLY | os.O_NONBLOCK, config)
+        if not stat.S_ISREG(os.fstat(config_file).st_mode):
+            raise RuntimeError("Nextcloud config.php must be a regular file")
+        # Validate every boundary before changing any ownership or mode.
+        os.fchown(config, 0, gid)
+        os.fchmod(config, 0o770)
+        os.fchown(config_file, uid, gid)
+        os.fchmod(config_file, 0o640)
+        os.fchown(apps, uid, gid)
+        os.fchmod(apps, 0o755)
+
+
+if __name__ == "__main__":
+    restore_permissions()

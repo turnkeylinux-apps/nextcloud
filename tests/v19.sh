@@ -18,19 +18,21 @@ assert status["installed"] is True
 assert status["version"].startswith("34.0.5")
 ' "$work/status.json"
 
-readonly_conf=/var/www/nextcloud/config/turnkey-read-only.config.php
-assert_config_read_only() {
-    runuser -u www-data -- /usr/bin/php -r '
-$CONFIG = array();
-require "/var/www/nextcloud/config/turnkey-read-only.config.php";
-exit(($CONFIG["config_is_read_only"] ?? false) === true ? 0 : 1);
-'
+assert_config_writable() {
+    local key="turnkey_qa_config_write_$$" actual
+    test "$(stat -c '%U:%G:%a' /var/www/nextcloud/config)" = root:www-data:770
+    runuser -u www-data -- /usr/bin/php /var/www/nextcloud/occ \
+        config:system:set "$key" --value=service-user-config-write
+    actual=$(runuser -u www-data -- /usr/bin/php /var/www/nextcloud/occ \
+        config:system:get "$key")
+    runuser -u www-data -- /usr/bin/php /var/www/nextcloud/occ \
+        config:system:delete "$key"
+    test "$actual" = service-user-config-write
 }
-assert_config_read_only
-test "$(stat -c '%U:%G:%a' "$readonly_conf")" = root:www-data:640
+assert_config_writable
 runuser -u www-data -- test ! -w /var/www/nextcloud/index.php
+runuser -u www-data -- test ! -w /var/www/nextcloud/apps
 test "$(stat -c '%U:%G:%a' /var/www/nextcloud/config/config.php)" = www-data:www-data:640
-runuser -u www-data -- test ! -w "$readonly_conf"
 runuser -u www-data -- touch /var/www/nextcloud-data/.tkl-v19-write-test
 runuser -u www-data -- rm /var/www/nextcloud-data/.tkl-v19-write-test
 runuser -u www-data -- touch /var/www/nextcloud/custom_apps/.tkl-v19-write-test
@@ -84,23 +86,14 @@ assert_scheduled_jobs() {
     last=$(turnkey-occ config:app:get core lastcron)
     test "$last" -ge "$before"
     runuser -u www-data -- /usr/bin/php /var/www/nextcloud/occ status
-    assert_config_read_only
+    assert_config_writable
 }
 assert_scheduled_jobs
-# Exercise the same atomic read-only toggle used by the privileged updater
-# without contacting the update service or changing the installed version.
+# Exercise the privileged updater's final permissions without changing the
+# installed version; normal configuration writes must remain available.
 source /usr/local/sbin/turnkey-nextcloud-update
-trap restore_read_only_config EXIT
-disable_read_only_config
-test ! -e "$READ_ONLY_CONF"
-test "$(stat -c '%U:%G:%a' "$READ_ONLY_CONF_DISABLED")" = \
-    root:www-data:640
 restore_permissions
-trap - EXIT
 assert_scheduled_jobs
-test ! -e "$READ_ONLY_CONF_DISABLED"
-test "$(stat -c '%U:%G:%a' "$readonly_conf")" = root:www-data:640
-assert_config_read_only
 if runuser -u www-data -- /usr/local/sbin/turnkey-nextcloud-update; then
     echo 'non-root updater invocation unexpectedly succeeded' >&2
     exit 1
@@ -115,9 +108,9 @@ curl "${curl_args[@]}" "${auth_args[@]}" -f -X DELETE "$dav"
 cat >"$result" <<EOF
 package_source=official Nextcloud 34.0.5 release ZIP pinned by SHA-256
 installed_version=34.0.5
-runtime_checks=Apache, MariaDB and Redis services, firstboot completion, read-only merged configuration and updater toggle, status endpoint, authenticated WebDAV write/read/delete across restart, core integrity, ownership boundaries, configured www-data cron and direct occ execution with persisted lastcron before and after updater permission restoration, password log hygiene
+runtime_checks=Apache, MariaDB and Redis services, firstboot completion, service-user configuration write/read/delete before and after updater permission restoration, status endpoint, authenticated WebDAV write/read/delete across restart, core integrity, ownership boundaries, configured www-data cron and direct occ execution with persisted lastcron, password log hygiene
 updater_command=turnkey-nextcloud-update as root
-updater_result=root-only command present; non-root use fails closed; atomic read-only fragment disable and restore validated without changing the installed version
+updater_result=root-only command present; non-root use fails closed; permission restoration preserves service-user configuration writes and scheduled jobs without changing the installed version
 updater_channel=official Nextcloud stable releases
 integrity_evidence=release ZIP pinned to d077fdca3dc78ef60b5bbc51182f2a1737aa01e2044d6c23f4e7b72146f5239a and turnkey-occ integrity check
 EOF

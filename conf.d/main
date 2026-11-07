@@ -45,7 +45,7 @@ mysqladmin create $DB_NAME
 mysql --batch --execute "grant all privileges on $DB_NAME.* to $DB_USER@localhost identified by '$DB_PASS'; flush privileges;"
 
 # command-line install
-chown -R www-data:www-data $WEBROOT $DATAROOT
+chown -hR www-data:www-data $WEBROOT $DATAROOT
 cd $WEBROOT
 turnkey-occ maintenance:install --database "mysql" \
     --database-name "$DB_NAME"  --database-user "$DB_USER" --database-pass "$DB_PASS" \
@@ -95,14 +95,13 @@ sed -i 's|# unixsocket .*|unixsocket /var/run/redis/redis.sock|g' /etc/redis/red
 sed -i 's|# unixsocketperm .*|unixsocketperm 770|g' /etc/redis/redis.conf
 
 # Root owns Nextcloud core and bundled apps. The config owner must match
-# the HTTP user for console and cron; firstboot installs a root-owned
-# read-only policy fragment. Data and custom apps remain web-writable.
-chown -R root:root "$WEBROOT"
+# the HTTP user for console and cron. Its directory permits configuration
+# changes from the administration UI. Data and custom apps remain writable.
+chown -hR root:root "$WEBROOT"
 find "$WEBROOT" -type d -exec chmod 0755 {} +
 find "$WEBROOT" -type f -exec chmod 0644 {} +
-chown -R www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
-chown www-data:www-data "$CONF"
-chmod 0640 "$CONF"
+chown -hR www-data:www-data "$DATAROOT" "$WEBROOT/custom_apps"
+/usr/local/sbin/turnkey-nextcloud-config-permissions
 
 # stop services
 service mysql stop

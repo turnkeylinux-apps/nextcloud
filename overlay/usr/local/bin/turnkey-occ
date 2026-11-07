@@ -3,15 +3,7 @@
 [[ -z "$DEBUG" ]] || set -x
 
 OCC=/var/www/nextcloud/occ
-OCC_CONFIG=/var/www/nextcloud/config/config.php
-
-if [[ -z "$NC_USR" ]]; then
-    if [[ -e "$OCC_CONFIG" ]]; then
-        NC_USR=$(stat --format='%U' "$OCC_CONFIG")
-    else
-        NC_USR=www-data
-    fi
-fi
+NC_USR=${NC_USR:-www-data}
 
 COMMAND="/usr/bin/php $OCC $(printf '%q ' "$@")"
 
