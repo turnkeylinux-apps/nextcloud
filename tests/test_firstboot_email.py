@@ -89,6 +89,35 @@ class RecoveryEmailTests(unittest.TestCase):
         self.assertEqual(self.email, "owner@example.org")
         self.cache.write.assert_any_call("APP_EMAIL", "owner@example.org")
 
+    def test_headless_fallback_prompts_for_actual_recovery_owner(self):
+        self.email = "admin@example.com"
+        code, _ = self.run_main([])
+        self.assertEqual(code, 0)
+        self.dialog.get_email.assert_called_once()
+        self.assertEqual(self.email, "owner@example.org")
+        self.assertEqual(self.events, ["password", "email"])
+        self.cache.write.assert_any_call("APP_EMAIL", "owner@example.org")
+
+    def test_unattended_fallback_requires_explicit_owner(self):
+        self.email = "admin@example.com"
+        code, error = self.run_main(["--pass=new-password", "--domain=DEFAULT"])
+        self.assertEqual(code, 1)
+        self.assertIn("APP_EMAIL/--email is required", error)
+        self.assertEqual(self.email, "admin@example.com")
+        self.assertFalse(self.events)
+        self.cache.write.assert_not_called()
+        self.hook.Dialog.assert_not_called()
+
+    def test_explicit_email_keeps_preseed_contract_even_for_fallback_address(self):
+        self.email = "existing@example.org"
+        code, _ = self.run_main([
+            "--pass=new-password", "--domain=DEFAULT", "--email=admin@example.com",
+        ])
+        self.assertEqual(code, 0)
+        self.assertEqual(self.email, "admin@example.com")
+        self.assertEqual(self.events, ["password", "email"])
+        self.hook.Dialog.assert_not_called()
+
     def test_new_preseed_applies_normalized_email_and_default_domain(self):
         code, _ = self.run_main(
             ["--pass-stdin", "--domain=DEFAULT", "--email= Owner@Example.org "],

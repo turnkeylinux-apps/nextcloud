@@ -271,7 +271,9 @@ def main():
     # service-user access before inspecting them, without running app PHP as root.
     subprocess.run(["/usr/local/sbin/turnkey-nextcloud-config-permissions"], check=True)
     remove_legacy_read_only_config()
-    if not email and not get_admin_email():
+    # Headless setup supplies a placeholder, not an owner recovery address.
+    # Explicit --email input still takes precedence, including unattended setup.
+    if not email and get_admin_email() in ("", "admin@example.com"):
         # Existing unattended preseeds supplied password and domain only.
         # Do not turn those into a new interactive prompt or invent an owner.
         if password and domain:
