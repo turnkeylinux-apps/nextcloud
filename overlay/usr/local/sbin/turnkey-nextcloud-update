@@ -43,12 +43,11 @@ main() {
     remove_legacy_read_only_config
     find -P "$WEBROOT" -path "$WEBROOT/config" -prune -o \
         -exec chown -h www-data:www-data {} +
-    runuser www-data -s /bin/bash -c \
-        "/usr/bin/php '$WEBROOT/updater/updater.phar' --no-interaction"
-    runuser www-data -s /bin/bash -c \
-        "/usr/bin/php '$WEBROOT/occ' upgrade --no-interaction"
-    runuser www-data -s /bin/bash -c \
-        "/usr/bin/php '$WEBROOT/occ' integrity:check-core"
+    /usr/local/sbin/turnkey-nextcloud-config-permissions --during-update \
+        runuser www-data -s /bin/bash -c \
+        "/usr/bin/php '$WEBROOT/updater/updater.phar' --no-interaction &&
+         /usr/bin/php '$WEBROOT/occ' upgrade --no-interaction &&
+         /usr/bin/php '$WEBROOT/occ' integrity:check-core"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

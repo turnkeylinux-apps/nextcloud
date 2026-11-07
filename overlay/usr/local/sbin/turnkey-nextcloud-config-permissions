@@ -6,6 +6,8 @@ import grp
 import os
 import pwd
 import stat
+import subprocess
+import sys
 
 
 def restore_permissions(webroot="/var/www/nextcloud"):
@@ -32,5 +34,53 @@ def restore_permissions(webroot="/var/www/nextcloud"):
         os.fchmod(apps, 0o755)
 
 
+def run_with_writable_config(command, webroot="/var/www/nextcloud"):
+    """Lend file write access for the updater, then restore existing metadata."""
+    uid = pwd.getpwnam("www-data").pw_uid
+    with ExitStack() as stack:
+        root = os.open(webroot, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        stack.callback(os.close, root)
+        config = os.open("config", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                         dir_fd=root)
+        stack.callback(os.close, config)
+
+        def opened_file(name):
+            fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW,
+                         dir_fd=config)
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                os.close(fd)
+                raise RuntimeError("Updater config entries must be regular files: " + name)
+            return fd
+
+        files = []
+        for name in os.listdir(config):
+            fd = opened_file(name)
+            stack.callback(os.close, fd)
+            files.append((name, fd, os.fstat(fd)))
+
+        def restore_file(name, original):
+            # The updater may replace scaffold files or config.php by name.
+            fd = opened_file(name)
+            try:
+                os.fchown(fd, original.st_uid, original.st_gid)
+                os.fchmod(fd, stat.S_IMODE(original.st_mode))
+            finally:
+                os.close(fd)
+
+        # Validate every entry before granting access. ExitStack restores all
+        # other entries even if one replacement is unsafe or has disappeared.
+        for name, fd, original in files:
+            stack.callback(restore_file, name, original)
+        for name, fd, original in files:
+            os.fchown(fd, uid, original.st_gid)
+            os.fchmod(fd, stat.S_IMODE(original.st_mode) | stat.S_IWUSR)
+        return subprocess.run(command).returncode
+
+
 if __name__ == "__main__":
-    restore_permissions()
+    if len(sys.argv) == 1:
+        restore_permissions()
+    elif sys.argv[1] == "--during-update" and len(sys.argv) > 2:
+        raise SystemExit(run_with_writable_config(sys.argv[2:]))
+    else:
+        raise SystemExit("Usage: turnkey-nextcloud-config-permissions [--during-update COMMAND ...]")
