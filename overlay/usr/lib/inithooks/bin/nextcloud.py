@@ -68,7 +68,7 @@ def get_admin_email() -> str:
 def set_admin_email(email: str):
     subprocess.run(
         ["/usr/local/bin/turnkey-occ", "user:setting", "admin", "settings",
-         "email", f"--value={email}"],
+         "email", email],
         check=True, capture_output=True, text=True,
     )
     applied = get_admin_email()

@@ -50,8 +50,14 @@ class RecoveryEmailTests(unittest.TestCase):
         if "user:info" in args:
             return SimpleNamespace(stdout=json.dumps({"email": self.email}))
         if "user:setting" in args:
+            # Official 34.0.5 Setting.php declares a positional value
+            # argument. Reject invented options rather than accepting any
+            # subprocess invocation as a successful backend write.
+            self.assertEqual(args[:5], ["/usr/local/bin/turnkey-occ", "user:setting", "admin", "settings", "email"])
+            self.assertEqual(len(args), 6)
+            self.assertFalse(args[-1].startswith("-"))
             self.events.append("email")
-            self.email = args[-1].removeprefix("--value=")
+            self.email = args[-1]
         return SimpleNamespace(stdout="", returncode=0)
 
     def password(self, value):
